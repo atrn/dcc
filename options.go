@@ -117,21 +117,23 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	input := bufio.NewScanner(file)
 	for input.Scan() {
 		line := strings.TrimSpace(input.Text())
-		if line == "#inherit" {
+		if line == "#include" {
 			path, _, found, err := FindFileFromDirectory(filepath.Base(filename), filepath.Dir(CurrentDirectory), nil)
 			if err != nil {
 				return false, err
 			}
 			if !found {
-				return false, fmt.Errorf("no file to '#inherit' in file %q", filename)
+				return false, fmt.Errorf("no file to '#include' in file %q", filename)
 			}
-			log.Println(filename, "#inherit ->", path)
+			if Debug {
+				log.Println(filename, "#include ->", path)
+			}
 			ok, err := o.ReadFromFile(path, filter)
 			if err != nil {
 				return false, err
 			}
 			if !ok {
-				return false, fmt.Errorf("error reading '#inherited' file %q", path)
+				return false, fmt.Errorf("error reading '#include' file %q", path)
 			}
 			continue
 		}
