@@ -25,9 +25,9 @@ func PAR(f ...func()) {
 }
 
 // PARfor calls a single function N times concurrently, waiting for
-// all calls to complete before returning.  Each call is passed its,
-// unique, 'iteration number' or 'id' or 'index', an integer in the
-// range [start, end).
+// all calls to complete before returning (occam's replicated-PAR).
+// Each call is passed its, unique, 'iteration number' or 'index',
+// an integer in the range [start, end).
 //
 func PARfor(start, end int, f func(int)) {
 	var w sync.WaitGroup

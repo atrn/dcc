@@ -14,13 +14,14 @@ import (
 	"os"
 )
 
-// OutputMux is an io.Writer multiplexor used to ensure each Writer's
-// output is NOT interleaved. The OutputMux NewWriter method returns
-// an io.WriteCloser that writes via the OutputMux. Write calls cache
-// the output until the writer is closed at which time the OutputMux
-// flushes any accumulated output. There are presently no limit to
-// the amount od data buffered in the output mux. This should only
-// be a problem for C++ (that's a joke...C++ template errors).
+// OutputMux is an io.Writer multiplexor used to ensure output from
+// each Writer's is NOT interleaved.
+//
+// The OutputMux NewWriter method returns an io.WriteCloser that writes
+// via the OutputMux. Output is cached until the writer is closed at which
+// time the OutputMux flushes the accumulated output. Presently there is
+// no limit to the amount od data buffered in the output mux, this should
+// only be a problem for C++ (that's a joke...C++ template errors).
 //
 type OutputMux struct {
 	w io.Writer         // output

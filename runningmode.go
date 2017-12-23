@@ -7,7 +7,7 @@
 //
 package main
 
-// RunningMode defines the in which dcc was invoked.
+// RunningMode defines the manner in which dcc was invoked.
 //
 // We derive the mode from the compiler and dcc options and can then
 // just check the mode to determine actions.

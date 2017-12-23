@@ -52,17 +52,6 @@ func MacosCreateLibrary(filename string, objectFiles []string) error {
 // program passing it the -dynamic option.
 //
 func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string) error {
-	//	// Transform compiler options to those understood by libtool
-	//	var newLinkerOptions []string
-	//	for index := 0; index < len(linkerOptions); index++ {
-	//		if linkerOptions[index] == "-macosx_version_min" {
-	//			newLinkerOptions = append(newLinkerOptions, linkerOptions[index])
-	//			newLinkerOptions = append(newLinkerOptions, linkerOptions[index+1])
-	//		}
-	//	}
-	// if len(newLinkerOptions) > 0 {
-	//	args = append(args, newLinkerOptions...)
-	// }
 	args := []string{"-dynamic", "-o", filename}
 	args = append(args, linkerOptions...)
 	args = append(args, objectFiles...)
