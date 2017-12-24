@@ -1,7 +1,9 @@
 # dcc - a dependency-driven C/C++ compiler driver
 
 `dcc` is a C/C++ compiler driver _wrapper_ that that adds, parallel,
-_dependency based builds_ to the underlying C or C++ compiler.
+_dependency based builds_ to the underlying C or C++ compiler (`gcc`,
+`clang`, etc...) and adds a number of other features that simplify
+development processes.
 
 `dcc` uses compiler generated dependency information along with
 hard-coded `make`-like rules to determine if compilation, or linking,
@@ -11,12 +13,55 @@ to dependencies and needs to be recreated.
 
 The result of moving this work into the compiler driver itself is
 simpler build systems. Much of the work done by tools such as `make`
-is now performed in a single command, e.g. `dcc *.c`.
+is now performed via a single command, e.g. `dcc *.c`. And instead of
+using the build tool to express and maintain dependencies that job can
+be relegated to `dcc` and the build tool used to express higher level
+concerns such as what to build and the options to use when building
+it.
 
-Instead of using the build tool to express and maintain
-dependencies that job can be relegated to `dcc` and the
-build tool used to express higher level concerns such as
-what to build and what options to use when building it.
+## Building and Installation
+
+`dcc` is written in Go and obviously requires Go installed to allow
+building (see [golang.org](http://golang.org/)). `dcc` uses only standard packages
+and is _trivially_ built via `go build`. To automate some things a
+small `Makefile` is supplied which provides the following targets:
+
+- make all  
+  Build `dcc`. The default target.
+- make clean  
+  Remove any built `dcc`.
+- make install  
+  Install `dcc` into `$(dest)`.
+
+
+### Installation
+
+The `make install` target copies the `dcc` executable to a
+directory named by the _$(dest)_ make variable. The default
+installation location is,
+
+    $HOME/bin
+
+This can be overriden by setting `dest` on the command line
+when installing. E.g.,
+
+    $ make install dest=/opt/bin
+
+### `dc++`
+
+`dcc` can be installed with the name `dc++`. This is not done by
+default since it isn't strictly needed - `dcc` can either determine
+the source language from filename extensions or be explicitly told
+told via option.
+
+Install `dcc` executable,
+
+    $ cp dcc /some/where/bin/dcc
+
+Create `dc++` link.
+
+    $ ln /some/where/bin/dcc /some/where/bin/dc++
+
 
 ## Usage
 
@@ -30,10 +75,11 @@ options passed on the command line. If a `-c` is passed `dcc` stops
 following compilation but if no `-c` option is supplied `dcc` runs the
 linker to form an executable from the object files.
 
-However unlike `cc` et al `dcc` automatically generates and uses
-dependencies and only compiles or links if an output file needs to be
-re-created. Apart from re-compilation being far faster when files are
-_not_ re-compiled the effect of this is transparent to the end-user.
+However, unlike `cc` et al `dcc` automatically generates and uses
+dependencies and will only compile or link if an output file needs to
+be re-created. This is entirely transparent to the end-user. The
+effect being that re-compilation is far faster when files are already
+up to date.
 
 `dcc` can be used as a mostly _drop in_ replacement for `cc/c++(1)` in
 existing build systems. Doing so adds additional dependency checking
@@ -42,22 +88,34 @@ compiler drivers that may affect results, `dcc` does *not* remove
 object files when no `-c` switch is used. Most build systems however
 invoke the compiler for each source file passing `-c`.
 
+### Differences to cc
+
+Although `dcc` is similar in usage to `cc(1)1 et al, enough so to
+permit it to be used directly in its place, `dcc` does behave
+differently in certain situations.
+
+#### object files without `-c`
+
+Normally, without a `-c` option, `cc` compiles the source files,
+generating object files, and runs the linker to link those object
+files into an executable. It then *removes* the object files. `dcc`
+does not remove the files.
+
 
 ## What dcc does
 
 `dcc` _wraps_ the underlying compiler driver and passes it options to
-have it output dependency information. `dcc` automaticlaly determines
-the names of the files storing this information and reads the files
-when re-compiling a file.
+have it output dependency information. `dcc` automatically determines
+the names of the files to store this information and reads them when
+re-compiling a file to obtain the dependencies.
 
-When re-compiling a file `dcc` performs make-like dependency checking
-using the compiler-generated information to determine if compilation
-is actually required. If not `dcc` does nothing and exits as if it had
-compiled the file (note, the file modification time is *not* altered).
-Dependency generation and checking is transparent to the end-user.
-Additionally, `dcc` implements dependency checking on the libraries
-and other files used in building.
-
+When re-compiling a file `dcc` performs `make`-like dependency
+checking to determine if compilation is actually required.  If not,
+`dcc` does nothing and exits as if it had compiled the file (note,
+file modification times are *not* altered). Otherwise `dcc` runs the
+compiler and lets it generate its output.  Dependency generation and
+checking is entirely transparent to the end-user and, `dcc` implements
+additional checks on the libraries and other files used in the build.
 
 ## Command line options
 
@@ -115,15 +173,17 @@ shared library" (sic) and `--lib` means "build a static library".
 ### Language selection
 
 `dcc` determines the language being compiled, C or C++, using a number
-of rules. C++ is selected if,
+of rules and uses the appropriate underlying C or C++ compiler. C++ is
+selected if,
 
-- if the name used to invoke `dcc` ends with `++`
-- a source file name has a C++ extension `.cc`, `.cpp`, `.cxx`
+- the `dcc` program name ends with `++`, e.g `dc++`
+- an input file uses a C++ extension `.cc`, `.cpp`, `.cxx`
 - the `--cpp` switch was supplied
 
+The choice of lanugage affects the choice of _options files_ (see
+below).
 
-
-## Depenencies
+## Dependency Files
 
 `dcc` uses dependency information generated by the compiler itself
 and information inferred from the filenames and system environment.
@@ -136,47 +196,6 @@ Dependency files are stored in a `.dcc.d` directory that resides in
 the same directory as the object file being created. The `DCCDEPS`
 environment variable can be set to use a name other than `.dcc.d` for
 this directory.
-
-
-### Rules
-
-`dcc` compiles a source file if one or more of the following is true,
-
-- the object file does not exist
-- the source file is newer than the object file
-- compiler options have changed (see below)
-- there is no dependency file for the object file
-- a dependent file is newer than the object file
-- the --force command-line option was supplied
-
-Otherwise the source  file does  not require _re-compilation_.
-
-
-## Differences to cc
-
-Although `dcc` is similar in usage to cc(1) et al, enough so to permit
-it to be used directly in their place, it does have a number of
-behavioral differences.
-
-### object files without `-c`
-
-`dcc` behaves differently to `cc` in the abscence of the `-c` option.
-
-Normally, without `-c` `cc` will compile the source files, generating
-object files, run the linker to create an executable from those object
-files and then *remove* the object files.
-
-`dcc` does not remove the object files as they are required to
-implement re-compilation.
-
-### concurrent compilation
-
-When passed more than one source file `dcc` compiles more than one
-file at a time.
-
-### options files
-
-`dcc` can read compiler and linker options and libraries from files.
 
 ## Options files
 
@@ -254,8 +273,12 @@ be trivially cross-buildable.
 and mostly likely other UNIX systems that use gcc, clang or
 similar.
 
-`dcc` has not really been used _in anger_ and I expect many changes
-if it is used more extensively.
+`dcc` has not really been used _in anger_ and I expect many changes if
+it is used more extensively. There are many areas where I've just
+hacked things in, e.g. frameworks on MacOS, which would be better
+expressed in a more structured manner, i.e. more comprehensive
+abstracted interfaces to the compiler and other tools to remove the
+platform-specific conditiona.
 
 ## License
 
@@ -265,3 +288,29 @@ a  utility such  as dcc  is infrastructure  and we  should share,  and
 advance, infrastructure so we all get ahead.
 
 As per convention the license text is in the file LICENSE.
+
+
+## Example
+
+Using `dcc` in a project can vastly simplfy its build system. Instead
+of implementing build rules via `make` or generating them via `cmake`
+or autotools you can just use `dcc`. It takes care of the building
+part.
+
+A complete development `Makefile` for a simple program, with all
+source files in one directory, can be as small as:
+
+    .PHONY: program clean
+    
+    program:
+        dcc $(CFLAGS) *.c -o $@
+        
+    clean:
+        rm -f program *.o
+        rm -rf .dcc.d
+
+The `program` target builds everything using `dcc`. It is marked
+marked _phony_ as we rely on `dcc` to take care of things.
+
+Until the `dcc`'s `--clean` option is implemented the `clean` target
+has to `rm -rf` a directory created by `dcc`.
