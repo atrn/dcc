@@ -229,7 +229,11 @@ func main() {
 	// its command line option syntax which allows for '/' as an
 	// option specifier.
 	//
+	// Likewise darwin (MacOS) is special in that it has the
+	// concept of frameworks.
+	//
 	windows := runtime.GOOS == "windows"
+	macos := runtime.GOOS == "darwin"
 
 	// Go over the command line and collect option and the names of
 	// source files to be compiled and/or files to pass to the linker.
@@ -317,13 +321,13 @@ func main() {
 			}
 			setMode(arg, CompileAndMakeDLL)
 
-		case runtime.GOOS == "darwin" && arg == "-framework":
+		case macos && arg == "-framework":
 			libraryFiles.Append(arg)
 			if i++; i < len(os.Args) {
 				libraryFiles.Append(os.Args[i])
 			}
 
-		case runtime.GOOS == "darwin" && (arg == "-macosx_version_min" || arg == "-macosx_version_max"):
+		case macos && (arg == "-macosx_version_min" || arg == "-macosx_version_max"):
 			linkerOptions.Append(arg)
 			if i++; i < len(os.Args) {
 				linkerOptions.Append(os.Args[i])
