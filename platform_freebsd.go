@@ -21,5 +21,4 @@ var platform = Platform{
 	LibraryPaths:      []string{"/usr/lib", "/lib"},
 	CreateLibrary:     ElfCreateLibrary,
 	CreateDLL:         ElfCreateDLL,
-	Specific:          platformSpecificPath,
 }
