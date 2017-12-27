@@ -73,5 +73,5 @@ func DepsFilename(path string) string {
 		return path + ".d"
 	}
 	head, tail := filepath.Dir(path), filepath.Base(path)
-	return filepath.Join(DepsDir, head, tail)
+	return filepath.Join(head, DepsDir, tail) + ".d"
 }
