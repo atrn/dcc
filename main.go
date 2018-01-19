@@ -82,6 +82,13 @@ func main() {
 		defer CatchPanics()
 	}
 
+	CCFile := Getenv("CCFILE", "CC")
+	CXXFile := Getenv("CXXFILE", "CXX")
+	CFLAGSFile := Getenv("CFLAGSFILE", "CFLAGS")
+	CXXFLAGSFile := Getenv("CXXFLAGSFILE", "CXXFLAGS")
+	LDFLAGSFile := Getenv("LDFLAGSFILE", "LDFLAGS")
+	LIBSFile := Getenv("LIBSFILE", "LIBS")
+
 	NumJobs = GetenvInt("NJOBS", runtime.NumCPU())
 	DepsDir = Getenv("DCCDEPS", platform.DefaultDepsDir)
 	DccDir = Getenv("DCCDIR", ".dcc")
@@ -97,15 +104,15 @@ func main() {
 	outputPathname := ""
 	dasho := ""
 
-	cCompiler := makeCompilerOption("CC", platform.DefaultCC)
-	cppCompiler := makeCompilerOption("CXX", platform.DefaultCXX)
+	cCompiler := makeCompilerOption(CCFile, platform.DefaultCC)
+	cppCompiler := makeCompilerOption(CXXFile, platform.DefaultCXX)
 
 	// We assume we're compiling C and define a function to switch
 	// things to C++. Which we check for next.
 	//
-	underlyingCompiler, optionsFilename := cCompiler, "CFLAGS"
+	underlyingCompiler, optionsFilename := cCompiler, CFLAGSFile
 	cplusplus := func() {
-		underlyingCompiler, optionsFilename = cppCompiler, "CXXFLAGS"
+		underlyingCompiler, optionsFilename = cppCompiler, CXXFLAGSFile
 	}
 
 	// Rules for deciding if we're need to compile with C++:
@@ -171,9 +178,9 @@ func main() {
 	//
 	compilerOptions.SetModTime(MoreRecentOf(compilerOptions, underlyingCompiler))
 
-	// Now we do the same for the linker options. We use the file "LDFLAGS".
+	// Now we do the same for the linker options. We use the "LDFLAGS" file.
 	//
-	_, err = linkerOptions.ReadFromFile(filepath.Join(DccDir, "LDFLAGS"), func(s string) string {
+	_, err = linkerOptions.ReadFromFile(filepath.Join(DccDir, LDFLAGSFile), func(s string) string {
 		// Collect directories named via -L in libraryDirs
 		if strings.HasPrefix(s, "-L") {
 			libraryDirs = append(libraryDirs, s[2:])
@@ -191,7 +198,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = ReadLibs(libraryFiles, libraryDirs, frameworks); err != nil {
+	if err = ReadLibs(LIBSFile, libraryFiles, libraryDirs, frameworks); err != nil {
 		log.Fatal(err)
 	}
 
@@ -585,6 +592,16 @@ Environment
     DCCDIR	Name of the dcc-options directory (%s).
     NJOBS       Number of compile job (%d).
 
+The following variables define the actual names used for
+the options files under "Files".
+
+    CCFILE	Name of the CC options file.
+    CXXFILE	Name of the CXX options files.
+    CFLAGSFILE	Name of the CFLAGS options file.
+    CXXFLAGSFILE Name of the CXXFLAGS options file.
+    LDFLAGSFILE	Name of the LDFLAGS options file.
+    LIBSFILE	Name of the LIBS options file.
+
 Files
     CC          C compiler name.
     CXX         C++ compiler name.
@@ -615,6 +632,9 @@ followed by ".<os>" and finally no extension.
 "arm8le" , "s390x", etc...  The actual names come from
 the Go runtime.  This host is "%s_%s".
 
+Environment variables may be used to define the names
+of the different options files and select specific options.
+
 `,
 		Myname,
 		platform.DefaultCC,
@@ -644,9 +664,9 @@ func CatchPanics() {
 
 // ReadLibs reads a "LIBS" file
 //
-func ReadLibs(libraryFiles *Options, libraryDirs []string, frameworks []string) error {
+func ReadLibs(libsFile string, libraryFiles *Options, libraryDirs []string, frameworks []string) error {
 	captureNext := false
-	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, "LIBS"), func(s string) string {
+	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, libsFile), func(s string) string {
 		if captureNext {
 			frameworks = append(frameworks, s)
 			captureNext = false

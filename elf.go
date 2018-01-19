@@ -7,6 +7,11 @@
 //
 
 // +build !windows !darwin
+
+// Here's a comment to appease golint. We can't use the build tag
+// comment above since it needs to be followed by a blank line.
+// golint should know better. Silly golint.
+//
 package main
 
 import (
