@@ -564,7 +564,7 @@ Options, other than those listed below, are passed to the underlying
 compiler. Any -c or -o and similar options are noted and used to control
 linking and object file locations. Compilation is done in parallel using,
 by default, as many jobs as there are CPUs and dependency files written
-to a .dcc directory alongside the object files.
+to a directory alongside the object files.
 
 Non-compiler Options:
     --exe path	Create executable program 'path'.
