@@ -7,7 +7,6 @@
 //
 
 // +build !windows !darwin
-
 package main
 
 import (

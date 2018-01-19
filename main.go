@@ -5,11 +5,11 @@
 // This source code is released under version 2 of the  GNU Public License.
 // See the file LICENSE for details.
 //
-
 package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -200,7 +200,7 @@ func main() {
 	setMode := func(arg string, mode RunningMode) {
 		if runningMode != ModeNotSpecified {
 			fmt.Fprintf(os.Stderr, "%s: a running mode has already been defined\n\n", arg)
-			UsageError(1)
+			UsageError(os.Stderr, 1)
 		}
 		runningMode = mode
 	}
@@ -242,7 +242,7 @@ func main() {
 		arg := os.Args[i]
 		switch {
 		case arg == "--help":
-			UsageError(0)
+			UsageError(os.Stdout, 0)
 
 		case windows && arg[0] == '/':
 			// Compiler option for cl.exe
@@ -370,7 +370,7 @@ func main() {
 	// need to be a source file but we need something.
 	//
 	if len(inputFilenames) == 0 {
-		UsageError(1)
+		UsageError(os.Stderr, 1)
 	}
 
 	// ----------------------------------------------------------------
@@ -555,10 +555,11 @@ func makeCompilerOption(name, defcmd string) *Options {
 	return opts
 }
 
-// UsageError outputs a program usage message and exits the process.
+// UsageError outputs a program usage message to the given
+// writer and exits the process with the given status.
 //
-func UsageError(status int) {
-	fmt.Fprintf(os.Stderr, `Usage: %s [options] filename...
+func UsageError(w io.Writer, status int) {
+	fmt.Fprintf(w, `Usage: %s [options] filename...
 
 Options, other than those listed below, are passed to the underlying
 compiler. Any -c or -o and similar options are noted and used to control
@@ -592,13 +593,28 @@ Files
     LDFLAGS     Linker options.
     LIBS        Libraries and library paths.
 
-Platform-specific filenames may be used which override
-the generic files. A platform-specific filename has an
-filename extenion of the form '.<os>' or '.<os>_<arch>'
-where <os> is one of 'windows', 'darwin', 'linux', 'freebsd'
-and <arch> the processor architecture, 'i386', 'amd64',
-'arm32', 'arm64', etc... (the actual strings being defined
-by the Go programming language implementation).
+Options files may be put in a directory named by the DCCDIR
+environment variable. This defaults to .dcc, or if that does
+not exist, the current directory.
+
+Options files are text files storing compiler and linker
+options. The contents are turned into program options by
+removing #-style line comments and using the whitespace
+separated words as individual program arguments. Options
+files act as dependencies and invoke rebuilds when changed.
+
+Platform-specific file naming may be used to have different
+options files for different platforms and/or architectures.
+When opening a file dcc appends extensions formed from the
+host OS and archtecture to the file name and tries to use
+those files. The extension ".<os>_<arch>" is tried first
+followed by ".<os>" and finally no extension.
+
+<os> is something like "windows", "linux", "darwin",
+"freebsd" and so on.  <arch> is one of  "amd64", "386",
+"arm8le" , "s390x", etc...  The actual names come from
+the Go runtime.  This host is "%s_%s".
+
 `,
 		Myname,
 		platform.DefaultCC,
@@ -606,6 +622,8 @@ by the Go programming language implementation).
 		platform.DefaultDepsDir,
 		DccDir,
 		runtime.NumCPU(),
+		runtime.GOOS,
+		runtime.GOARCH,
 	)
 	os.Exit(status)
 }
