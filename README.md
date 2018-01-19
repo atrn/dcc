@@ -280,6 +280,15 @@ expressed in a more structured manner, i.e. more comprehensive
 abstracted interfaces to the compiler and other tools to remove the
 platform-specific conditiona.
 
+The code has lots of comments. Many of them correct. The commenting
+is a really the result of using Visual Studio Code and its Go package's
+default configuration which lints your code and produces lots of warnings
+about naming and commenting and so on. Rather than disabling the tool
+like a sensible person I appeased it and wrote the things it told me
+to write. That stopped it drawing squiggles and annoying icons all over
+the place which I interpreted as being a good thing. Visual Studio Code
+is very useful for Go (the debugger works).
+
 ## License
 
 `dcc` is  released under  the GPL,  version 2. If  you advance  dcc, and
