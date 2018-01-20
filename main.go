@@ -89,7 +89,7 @@ func main() {
 	LDFLAGSFile := Getenv("LDFLAGSFILE", "LDFLAGS")
 	LIBSFile := Getenv("LIBSFILE", "LIBS")
 
-	NumJobs = GetenvInt("NJOBS", runtime.NumCPU())
+	NumJobs = GetenvInt("NJOBS", 2+runtime.NumCPU())
 	DepsDir = Getenv("DCCDEPS", platform.DefaultDepsDir)
 	DccDir = Getenv("DCCDIR", ".dcc")
 
@@ -295,7 +295,7 @@ func main() {
 
 		case strings.HasPrefix(arg, "-j"):
 			if arg == "-j" {
-				NumJobs = runtime.NumCPU()
+				NumJobs = 2 + runtime.NumCPU()
 			} else if n, err := strconv.Atoi(arg[2:]); err != nil {
 				log.Fatalf("%s: %s", arg, err)
 			} else if n < 1 {
