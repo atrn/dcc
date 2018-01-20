@@ -2,7 +2,7 @@
 
 `dcc` is a C/C++ compiler driver _wrapper_ that that adds, parallel,
 _dependency based builds_ to the underlying C or C++ compiler (`gcc`,
-`clang`, etc...) and adds a number of other features that simplify
+`clang`, etc...) and adds a number of other features to simplify
 development processes.
 
 `dcc` uses compiler generated dependency information along with
@@ -15,7 +15,7 @@ The result of moving this work into the compiler driver itself is
 simpler build systems. Much of the work done by tools such as `make`
 is now performed via a single command, e.g. `dcc *.c`. And instead of
 using the build tool to express and maintain dependencies that job can
-be relegated to `dcc` and the build tool used to express higher level
+be delegated to `dcc` and the build tool used to express higher level
 concerns such as what to build and the options to use when building
 it.
 
