@@ -33,7 +33,21 @@ var platform = Platform{
 func libtool(args []string) error {
 	const cmd = "libtool"
 	if !Quiet {
-		fmt.Fprintln(os.Stderr, cmd, strings.Join(args, " "))
+		if Verbose {
+			fmt.Fprintln(os.Stderr, cmd, strings.Join(args, " "))
+		} else {
+			filename := ""
+			nargs := len(args)
+			for index, arg := range args {
+				if arg == "-o" {
+					if index < nargs-1 {
+						filename = args[index+1]
+						break
+					} 
+				}
+			}
+			fmt.Fprintln(os.Stderr, cmd, filename)
+		}
 	}
 	return Exec(cmd, args, os.Stderr)
 }

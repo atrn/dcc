@@ -30,7 +30,11 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		args = append(args, frameworks...)
 		args = append(args, "-o", target)
 		if !Quiet {
-			fmt.Fprintln(os.Stderr, ActualCompiler.Name(), strings.Join(args, " "))
+			if Verbose {
+				fmt.Fprintln(os.Stderr, ActualCompiler.Name(), strings.Join(args, " "))
+			} else {
+				fmt.Fprintln(os.Stderr, "ld", target)
+			}
 		}
 		return Exec(ActualCompiler.Name(), args, os.Stderr)
 	}

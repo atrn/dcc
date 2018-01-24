@@ -62,6 +62,10 @@ var (
 	//
 	Quiet = false
 
+	// Verbose enables messages.
+	//
+	Verbose = false
+
 	// Debug enables debugging features if true.
 	//
 	Debug = false
@@ -290,12 +294,15 @@ func main() {
 		case arg == "--quiet":
 			Quiet = true
 
+		case arg == "--verbose":
+			Verbose = true
+
 		case arg == "--debug":
 			break // also handled above
 
 		case strings.HasPrefix(arg, "-j"):
 			if arg == "-j" {
-				NumJobs = 2 + runtime.NumCPU()
+				NumJobs = runtime.NumCPU()
 			} else if n, err := strconv.Atoi(arg[2:]); err != nil {
 				log.Fatalf("%s: %s", arg, err)
 			} else if n < 1 {
@@ -583,6 +590,7 @@ Non-compiler Options:
     --force     Ignore dependencies, always compile/link/lib.
     --clean     Remove dcc-maintained files.
     --quiet     Disable non-error messages.
+    --verbose   Show more output.
     --debug     Enable debug messages.
 
 Environment

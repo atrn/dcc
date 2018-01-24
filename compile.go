@@ -30,7 +30,6 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 	//
 	mux := NewOutputMux(os.Stderr)
 	go mux.Run()
-	defer mux.Stop()
 
 	// Our process structure is a simple fan-out that processes the
 	// names of source files, compiles them and generates errors,
@@ -71,6 +70,7 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 		},
 	)
 
+	mux.Stop()
 	return
 }
 
@@ -124,11 +124,16 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 	//
 	if !Quiet {
 		var displayed []string
-		displayed = append(displayed, ActualCompiler.Name())
-		displayed = append(displayed, options.Values...)
-		displayed = append(displayed, filename)
-		if objdir != "" {
-			displayed = append(displayed, "-o", ofile)
+		if Verbose {
+		    displayed = append(displayed, ActualCompiler.Name())
+		    displayed = append(displayed, options.Values...)
+		    displayed = append(displayed, filename)
+		    if objdir != "" {
+			    displayed = append(displayed, "-o", ofile)
+		    }
+		} else {
+		    displayed = append(displayed, ActualCompiler.Name())
+		    displayed = append(displayed, filename)
 		}
 		fmt.Fprintln(os.Stderr, strings.Join(displayed, " "))
 	}
