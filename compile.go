@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/atrn/par"
 )
 
 // CompileAll compiles all of the given sources using the supplied
@@ -26,24 +28,28 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 	ok = true
 	// The standard error output of each compile is routed via an
 	// OutputMux which ensures output is not interleaved. We don't
-	// both with standard output as yet but probably should.
+	// bother with standard output yet but probably should.
 	//
 	mux := NewOutputMux(os.Stderr)
 	go mux.Run()
+	defer mux.Stop()
 
-	// Our process structure is a simple fan-out that processes the
-	// names of source files, compiles them and generates errors,
-	// hopefully nil ones. Source file names are fed to the 'filenames'
-	// channel which is read by N worker tasks. Each worker reads a
-	// filename from the channel and compiles the source file.
-	// The error result of the compilation is then sent on the errors
-	// channel. An error 'collecter' reads and reports any non-nil
-	// errors. PAR/PARfor make it easy.
+	// Our process structure is a simple fan-out that feeds the
+	// names of the source files to a number of "workers" for
+	// compilation.
+	//
+	// Source file names are fed to a 'filenames' channel which
+	// is read by N worker tasks. Each worker reads a filename
+	// from the channel, compiles the source file and sends an
+	// error value result for compilation on the errors channel.
+	// An error 'collecter' reads and reports any non-nil errors.
+	//
+	// Synchronization is done by par.DO and par.FOR.
 	//
 	filenames := make(chan string, len(sources))
 	errs := make(chan error, len(sources))
 
-	PAR(
+	par.DO(
 		func() {
 			for _, filename := range sources {
 				filenames <- filename
@@ -51,7 +57,7 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 			close(filenames)
 		},
 		func() {
-			PARfor(0, NumJobs, func(int) {
+			par.FOR(0, NumJobs, func(int) {
 				for filename := range filenames {
 					ofile := ObjectFilename(filename, objdir)
 					stderr := mux.NewWriter()
@@ -70,7 +76,6 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 		},
 	)
 
-	mux.Stop()
 	return
 }
 
