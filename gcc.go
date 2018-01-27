@@ -9,8 +9,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"io"
-	"os"
+	"io/ioutil"
 	"strings"
 )
 
@@ -51,13 +52,12 @@ func (gcc *GccStyleCompiler) Compile(source, object, deps string, options []stri
 // non-nil if the file failed to be parsed or opened.
 //
 func (gcc *GccStyleCompiler) ReadDependencies(path string) (string, []string, error) {
-	file, err := os.Open(path)
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", nil, err
 	}
-	defer file.Close()
 
-	input := bufio.NewScanner(file)
+	input := bufio.NewScanner(bytes.NewReader(data))
 	input.Split(bufio.ScanWords)
 	if !input.Scan() {
 		return "", nil, ErrUnexpectedEOF
@@ -70,7 +70,7 @@ func (gcc *GccStyleCompiler) ReadDependencies(path string) (string, []string, er
 		return "", nil, ErrNoColon
 	}
 
-	var filenames []string
+	var filenames = make([]string, 0, 1000)
 	for input.Scan() {
 		filename := input.Text()
 		filename = strings.TrimSuffix(filename, "\\")
