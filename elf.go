@@ -24,7 +24,7 @@ import (
 // program.
 //
 func ElfCreateLibrary(filename string, objectFiles []string) error {
-	args := append([]string{"rcv", filename}, objectFiles...)
+	args := append([]string{"rc", filename}, objectFiles...)
 	if !Quiet {
 		fmt.Fprintln(os.Stderr, "ar", strings.Join(args, " "))
 	}
