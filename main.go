@@ -133,7 +133,7 @@ func main() {
 				cplusplus()
 				break
 			}
-			if os.Args[i][0] != '-' && IsCPlusPlus(os.Args[i]) {
+			if os.Args[i][0] != '-' && IsCPlusPlusFile(os.Args[i]) {
 				cplusplus()
 				break
 			}

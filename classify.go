@@ -47,10 +47,10 @@ func is(path string, set map[string]struct{}) bool {
 	return found
 }
 
-// IsCPlusPlus returns true if the supplied pathname is that
+// IsCPlusPlusFile returns true if the supplied pathname is that
 // of a C++ source file.
 //
-func IsCPlusPlus(path string) bool {
+func IsCPlusPlusFile(path string) bool {
 	return is(path, cppSet)
 }
 
