@@ -18,7 +18,7 @@ var platform = Platform{
 	StaticLibPrefix:   "lib",
 	StaticLibSuffix:   ".a",
 	DefaultExecutable: "a.out",
-	LibraryPaths:      []string{"/usr/local/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib", "/lib/x86_64-linux-gnu", "/lib"},
+	LibraryPaths:      []string{"/usr/local/lib64", "/usr/local/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/lib/x86_64-linux-gnu", "lib64", "/lib"},
 	CreateLibrary:     ElfCreateLibrary,
 	CreateDLL:         ElfCreateDLL,
 }
