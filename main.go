@@ -140,6 +140,13 @@ func main() {
 		}
 	}
 
+	// The state...
+	//
+	// Options can be read from files, other state variables are
+	// set by interpreting command line options. The
+	// sourceFileIndex is explained below, basically it defines
+	// which files in inputFilenames are the names of source files.
+	//
 	var (
 		compilerOptions = new(Options)
 		linkerOptions   = new(Options)
