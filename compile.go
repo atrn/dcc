@@ -31,8 +31,7 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 	// bother with standard output yet but probably should.
 	//
 	mux := NewOutputMux(os.Stderr)
-	go mux.Run()
-	defer mux.Stop()
+	defer mux.Close()
 
 	// Our process structure is a simple fan-out that feeds the
 	// names of the source files to a number of "workers" for
