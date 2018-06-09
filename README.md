@@ -1,31 +1,37 @@
 # dcc - a dependency-driven C/C++ compiler driver
 
 `dcc` is a C/C++ compiler driver _wrapper_ that that adds, parallel,
-_dependency-based_ building to the underlying C or C++ compiler
-(which means `gcc`, `clang`, or `icc`). `dcc` adds a number of other
-features to simplify development processes.
+_dependency-based_ building to the underlying C or C++ compiler (which
+means `gcc`, `clang`, or `icc`).
 
 `dcc` uses compiler generated dependency information, along with
-hard-coded `make`-like rules, to determine if compilation, or linking,
-is actually required and avoids, if possible, doing any work. Like a
-`make`-based build `dcc` only re-compiles, or re-links, if an output 
-file is out-of-date with respect to its dependencies. Unlike make-based
+hard-coded `make`-like rules, to let it determine if compilation, or
+linking, is actually required. This allows it to avoid doing work, if
+possible. As with a typical `make`-based builds `dcc` only
+re-compiles, or re-links, when an output file is out-of-date with
+respect to its inputs, or dependencies. However, unlike make-based
 builds the user doesn't have to do anything to get this behaviour.
+They can use dcc as if it were cc and obtain automatic, parallel,
+dependency-based builds.
 
-The result of moving dependency checking into the compiler driver
-is simpler build systems. Much of the work done by tools such as `make`
-et al is now performed in a single command, e.g. `dcc *.c`. Instead of
-using the build tool to do this work, expressing and maintaining
-dependencies and performing efficient re-compilation, that job can
-be left to `dcc` and the build tool, if any, used to take care of
-higher level concerns such as what to build and what options to use.
+The aim of moving the dependency checking into the compiler driver is
+to simplify build systems. Instead of using a build tool to do the
+work of correctly, and efficiently, building the program or library
+using knowledge of the language dependency model, we have the
+language's compiler take care of that doing that.
+
+`dcc` adds a number of features to the compiler-driver model to
+simplify the development process.  For instance, `dcc` can uses files
+to store compiler options which are used as dependencies in builds
+allowing automatic re-compilation when build options change.
 
 ## Building and Installation
 
-`dcc` is written in Go and obviously requires Go installed to allow
-building (see [golang.org](http://golang.org/)). `dcc` uses only standard packages
-and is _trivially_ built via `go build`. To automate some things a
-small `Makefile` is supplied which provides the following targets:
+`dcc` is written in Go and obviously requires Go installed to build
+(see [golang.org](http://golang.org/)). `dcc` uses only standard Go
+packages and is _trivially_ built using the `go build` command.  To
+automate some other aspects of building a small `Makefile` is supplied
+which provides the following targets:
 
 - make all  
   Build `dcc`. The default target.
@@ -198,22 +204,21 @@ the same directory as the object file being created. The `DCCDEPS`
 environment variable can be set to use a name other than `.dcc.d` for
 this directory.
 
-## Options files
+## Options Files
 
 `dcc` can read compiler and linker options stored in files called
-_options files_. Options files are text files that contain options
-that would normally be passed on the command line.
+_options files_. Options files are simple text files that contain the
+options that would normally be passed on the command line.
 
-Unlike passing options via the the comand line options files permit
+Unlike passing options on the the comand line options files allow
 options to be split across multiple lines and support '#'-based _line_
-comments. Options files are also treated as dependencies so when
-options file changes, and presumably the options it contains are
-change, recompilation occurs.  This feature is useful with pre-
-compiled header files or non-standard compilation options and
-ensures all files are built in the same way.
+comments. Options files are also treated as dependencies and when
+changed, which presumably means the options within the file have been
+change, cause recompilation.  This helps ensure all files are built in
+the same way.
 
-The names of the options files are taken from the typical
-macro names used with make(1).
+The names adopted for options files are derived from the typical macro
+names used with make(1) for the particular options,
 
 - `CFLAGS` 
   C compiler options.
@@ -226,15 +231,17 @@ macro names used with make(1).
 
 ### Locating options files
 
-Option files are looked by searching up the directory hierarchy
-for a file with the given name, Files are searched for in the
-specific directory and within a $DCCDIR directory in that
-directory. The $DCCDIR directory defaults to `.dcc` but
-can be override by the environment variable.
+Option files are looked for by searching the directory hierarchy
+towards the root for a file with the particular name, e.g CXXFLAGS.
 
-Looking for the files in a `.dcc` directory is a quick hack to
-get the files out of the current directory and perhaps in the
-future some other method may be adopted (ha ha).
+Files are searched for either in the specific directory or within a
+`$DCCDIR` directory within that directory. `$DCCDIR` defaults to `.dcc`
+but can be override by the environment variable so we call it `$DCCDIR`
+even though it is rarely changed from the default `.dcc`.
+
+Looking for the files in a `$DCCDIR` directory is a quick hack to get
+the files out of the current directory and perhaps in the future some
+other method may be adopted (ha ha).
 
 ### Platform-specific option files
 
@@ -301,14 +308,13 @@ expressed in a more structured manner, i.e. more comprehensive
 abstracted interfaces to the compiler and other tools to remove the
 platform-specific conditiona.
 
-The code has lots of comments. Many of them correct. The commenting
-is a really the result of using Visual Studio Code and its Go package's
-default configuration which lints your code and produces lots of warnings
-about naming and commenting and so on. Rather than disabling the tool
-like a sensible person I appeased it and wrote the things it told me
-to write. That stopped it drawing squiggles and annoying icons all over
-the place which I interpreted as being a good thing. Visual Studio Code
-is very useful for Go (the debugger works).
+The code has lots of comments. Many of them correct! The commenting
+style is the result of using Visual Studio Code and its Go package's
+default configuration which _golints_ your code producing lots of
+annoying warnings about naming, comment style and so on. Rather than
+disabling the tool like a sensible person I appeased it and wrote the
+things it told me to write. That stopped it drawing little squiggles
+and annoying little icons everywhere.
 
 ## License
 

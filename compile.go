@@ -130,15 +130,15 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 	if !Quiet {
 		var displayed []string
 		if Verbose {
-		    displayed = append(displayed, ActualCompiler.Name())
-		    displayed = append(displayed, options.Values...)
-		    displayed = append(displayed, filename)
-		    if objdir != "" {
-			    displayed = append(displayed, "-o", ofile)
-		    }
+			displayed = append(displayed, ActualCompiler.Name())
+			displayed = append(displayed, options.Values...)
+			displayed = append(displayed, filename)
+			if objdir != "" {
+				displayed = append(displayed, "-o", ofile)
+			}
 		} else {
-		    displayed = append(displayed, ActualCompiler.Name())
-		    displayed = append(displayed, filename)
+			displayed = append(displayed, ActualCompiler.Name())
+			displayed = append(displayed, filename)
 		}
 		fmt.Fprintln(os.Stderr, strings.Join(displayed, " "))
 	}
@@ -157,7 +157,7 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 			if !current {
 				how = "out of"
 			}
-			log.Printf("deps: %q (%q) -> (%s date, %v) - %s", sourceInfo.Name(), target, how, err, caption)
+			log.Printf("DEPS: %q (%q) -> (%s date, %v) - %s", sourceInfo.Name(), target, how, err, caption)
 		}
 		return current, err
 	}
@@ -177,7 +177,7 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 	case os.IsNotExist(err):
 		return OutOfDate("target does not exist")
 	case err != nil:
-		return Error(err, "error checking target file existence")
+		return Error(err, "error occurred when checking target file existence")
 	case IsNewer(sourceInfo, targetInfo):
 		return OutOfDate("source is newer than target")
 	case IsNewer(options.FileInfo(), targetInfo):
@@ -189,7 +189,7 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 		case os.IsNotExist(err):
 			return OutOfDate(fmt.Sprintf("%q dependent file does not exist", filename))
 		case err != nil:
-			return Error(err, fmt.Sprintf("%q error when checking dependent file", filename))
+			return Error(err, fmt.Sprintf("%q: error when checking dependent file", filename))
 		case IsNewer(info, targetInfo):
 			return OutOfDate(fmt.Sprintf("%q dependency is newer than target", filename))
 		}
