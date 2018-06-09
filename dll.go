@@ -14,8 +14,8 @@ import (
 
 // Dll runs the compiler to link the given inputs and create the given
 // shared/dynamic library target using the supplied options. Returns a
-// corresponding error value. If the target exists and is newer than any
-// of the inputs no linking occurs.
+// corresponding error value. If the target exists and is newer than
+// any of the inputs no linking occurs.
 //
 func Dll(target string, inputs []string, libs *Options, options *Options, otherFiles *Options, frameworks []string) error {
 	createDll := func() error {
@@ -35,7 +35,7 @@ func Dll(target string, inputs []string, libs *Options, options *Options, otherF
 	if MoreRecentOf(options, libs).After(targetInfo.ModTime()) {
 		return createDll()
 	}
-	newestInput, err := Newest(inputs)
+	newestInput, err := NewestOf(inputs)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func Dll(target string, inputs []string, libs *Options, options *Options, otherF
 		return createDll()
 	}
 	if len(otherFiles.Values) > 0 {
-		newestOther, err := Newest(otherFiles.Values)
+		newestOther, err := NewestOf(otherFiles.Values)
 		if err != nil {
 			return err
 		}

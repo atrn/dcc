@@ -51,7 +51,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 	if MoreRecentOf(options, libs).After(targetInfo.ModTime()) {
 		return link()
 	}
-	newestInput, err := Newest(inputs)
+	newestInput, err := NewestOf(inputs)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		return link()
 	}
 	if len(otherFiles.Values) > 0 {
-		newest, err := Newest(otherFiles.Values)
+		newest, err := NewestOf(otherFiles.Values)
 		if err != nil {
 			return err
 		}

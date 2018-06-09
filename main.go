@@ -501,12 +501,12 @@ func main() {
 			case err != nil:
 				log.Fatal(err)
 			case !found:
-				log.Printf("warning: %q library not found (%v)", name, libraryDirs)
+				log.Printf("warning: %q library not found on path %v", name, libraryDirs)
 				// ... and we let the linker deal with it
 			default:
 				libraryFiles.Values[index] = path
 				if Debug {
-					log.Print(" LIB: ", name[2:], " -> ", path)
+					log.Print("DEBUG LIB: '", name[2:], "' -> ", path)
 				}
 			}
 		}

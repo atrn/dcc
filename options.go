@@ -19,7 +19,7 @@ import (
 
 // Options represents a series of words and is used to represent
 // compiler and linker options. Options are intended to be read from a
-// file.
+// file and act as a dependency to the build.
 //
 // An Options has a slice of strings, the option "values".
 //
@@ -117,23 +117,38 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	input := bufio.NewScanner(file)
 	for input.Scan() {
 		line := strings.TrimSpace(input.Text())
-		if line == "#include" {
-			path, _, found, err := FindFileFromDirectory(filepath.Base(filename), filepath.Dir(CurrentDirectory), nil)
+		if strings.HasPrefix(line, "#inherits") {
+			inheritedFilename := filepath.Base(filename)
+			fields := strings.Fields(line)
+			switch numFields := len(fields); {
+			case numFields > 2:
+				return false, fmt.Errorf("malformed '#inherits' line: %s", line)
+			case numFields == 2:
+				inheritedFilename = fields[1]
+				if filepath.Dir(inheritedFilename) != "." {
+					return false, fmt.Errorf("%q: '#inherits' filename may not contain path elements", inheritedFilename)
+				}
+			}
+			path, _, found, err := FindFileFromDirectory(
+				inheritedFilename,
+				filepath.Join(filepath.Dir(filename), ".."),
+				nil,
+			)
 			if err != nil {
 				return false, err
 			}
 			if !found {
-				return false, fmt.Errorf("no file to '#include' in file %q", filename)
+				return false, fmt.Errorf("%q: no file found to '#inherits'", filename)
 			}
 			if Debug {
-				log.Println(filename, "#include ->", path)
+				log.Printf("DEBUG: %q #inherits -> %q", filename, path)
 			}
 			ok, err := o.ReadFromFile(path, filter)
 			if err != nil {
 				return false, err
 			}
 			if !ok {
-				return false, fmt.Errorf("error reading '#include' file %q", path)
+				return false, fmt.Errorf("%q: error reading file", path)
 			}
 			continue
 		}

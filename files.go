@@ -18,12 +18,12 @@ import (
 //
 var CurrentDirectory = GetCurrentDirectory()
 
-// Newest returns the os.FileInfo for the most recently
+// NewestOf returns the os.FileInfo for the most recently
 // modified file in the slice of files. Or an error if one occurs.
 // Each file is stat'd and its modification time used to determine
 // if it is newer than any previous file.
 //
-func Newest(filenames []string) (time.Time, error) {
+func NewestOf(filenames []string) (time.Time, error) {
 	var t time.Time
 	info, err := Stat(filenames[0])
 	if err != nil {

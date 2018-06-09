@@ -1,23 +1,24 @@
 # dcc - a dependency-driven C/C++ compiler driver
 
 `dcc` is a C/C++ compiler driver _wrapper_ that that adds, parallel,
-_dependency based builds_ to the underlying C or C++ compiler (`gcc`,
-`clang`, etc...) and adds a number of other features to simplify
-development processes.
+_dependency-based_ building to the underlying C or C++ compiler
+(which means `gcc`, `clang`, or `icc`). `dcc` adds a number of other
+features to simplify development processes.
 
-`dcc` uses compiler generated dependency information along with
-hard-coded `make`-like rules to determine if compilation, or linking,
-is actually required.  Like a `make`-based build `dcc` only
-re-compiles or re-links if an output file is out-of-date with respect
-to dependencies and needs to be recreated.
+`dcc` uses compiler generated dependency information, along with
+hard-coded `make`-like rules, to determine if compilation, or linking,
+is actually required and avoids, if possible, doing any work. Like a
+`make`-based build `dcc` only re-compiles, or re-links, if an output 
+file is out-of-date with respect to its dependencies. Unlike make-based
+builds the user doesn't have to do anything to get this behaviour.
 
-The result of moving this work into the compiler driver itself is
-simpler build systems. Much of the work done by tools such as `make`
-is now performed via a single command, e.g. `dcc *.c`. And instead of
-using the build tool to express and maintain dependencies that job can
-be delegated to `dcc` and the build tool used to express higher level
-concerns such as what to build and the options to use when building
-it.
+The result of moving dependency checking into the compiler driver
+is simpler build systems. Much of the work done by tools such as `make`
+et al is now performed in a single command, e.g. `dcc *.c`. Instead of
+using the build tool to do this work, expressing and maintaining
+dependencies and performing efficient re-compilation, that job can
+be left to `dcc` and the build tool, if any, used to take care of
+higher level concerns such as what to build and what options to use.
 
 ## Building and Installation
 
@@ -49,10 +50,10 @@ when installing. E.g.,
 
 ### `dc++`
 
-`dcc` can be installed with the name `dc++`. This is not done by
-default since it isn't strictly needed - `dcc` can either determine
-the source language from filename extensions or be explicitly told
-told via option.
+`dcc` may be installed with the name `dc++`. This is not done by
+default since it isn't strictly required - `dcc` either determines
+the source language from filename extensions or can be explicitly
+told via command line option.
 
 Install `dcc` executable,
 
@@ -76,10 +77,10 @@ following compilation but if no `-c` option is supplied `dcc` runs the
 linker to form an executable from the object files.
 
 However, unlike `cc` et al `dcc` automatically generates and uses
-dependencies and will only compile or link if an output file needs to
-be re-created. This is entirely transparent to the end-user. The
-effect being that re-compilation is far faster when files are already
-up to date.
+dependency information and will only compile or link if an output
+file needs to be re-created. This is entirely transparent to the
+end-user. The effect being that re-compilation is far faster when
+files are already up to date.
 
 `dcc` can be used as a mostly _drop in_ replacement for `cc/c++(1)` in
 existing build systems. Doing so adds additional dependency checking
@@ -205,11 +206,14 @@ that would normally be passed on the command line.
 
 Unlike passing options via the the comand line options files permit
 options to be split across multiple lines and support '#'-based _line_
-comments. Options files are also treated as dependencies so that
-changing an options file, and presumably the options it contains,
-results in recompilation.  This feature is handy when using
-pre-compiled header files or non-standard compilation options and
+comments. Options files are also treated as dependencies so when
+options file changes, and presumably the options it contains are
+change, recompilation occurs.  This feature is useful with pre-
+compiled header files or non-standard compilation options and
 ensures all files are built in the same way.
+
+The names of the options files are taken from the typical
+macro names used with make(1).
 
 - `CFLAGS` 
   C compiler options.
@@ -220,22 +224,21 @@ ensures all files are built in the same way.
 - `LIBS` 
   Libraries and library paths.
 
-
 ### Locating options files
 
-Option files are stored within a $DCCDIR directory located in the
-current directory or in some directory higher in the directory
-hierarchy.
+Option files are looked by searching up the directory hierarchy
+for a file with the given name, Files are searched for in the
+specific directory and within a $DCCDIR directory in that
+directory. The $DCCDIR directory defaults to `.dcc` but
+can be override by the environment variable.
 
-If $DCCDIR is not set the directory `.dcc` is used if it exists
-otherwise the current directory `.` is used. Looking for the files in
-a `.dcc` directory is a quick hack to get the files out of the current
-directory and in the future some other method may be adopted (ha ha).
+Looking for the files in a `.dcc` directory is a quick hack to
+get the files out of the current directory and perhaps in the
+future some other method may be adopted (ha ha).
 
-### Platform-specific options
+### Platform-specific option files
 
-`dcc` uses a Go-inspired method to support platform-specific options.
-
+`dcc` uses a Go-style method to support platform-specific options.
 When searching for an options file `dcc` first searches for platform
 and architecture specific variants of the file. `dcc` forms a file
 name extension using names for for the host's architecture and
@@ -247,6 +250,12 @@ the following files will be searched for in order,
 
 1. `$DCCDIR/LIBS.freebsd_amd64`
 2. `$DCCDIR/LIBS.freebsd`
+3. `$DCCDIR/LIBS`
+
+On a 32-bit Windows the files are,
+
+1. `$DCCDIR/LIBS.windows_x86`
+2. `$DCCDIR/LIBS.windows`
 3. `$DCCDIR/LIBS`
 
 ### Libraries
@@ -262,6 +271,18 @@ Any library name starting with `-l` has the `-l` removed allowing
 users to use UNIX linker-style naming for familarity. _libraries_ with
 names starting with `-L` are the names of of library directories.
 
+
+### Option File Inheritence
+
+Options files may contain a special line `#inherits` to indicate they
+want to _inherit_ values set in by higher level, in the directory
+hierarchy sense, file. It is similar to a C `#include`.
+
+A `#inherits` directive with no arguments means _search for a file
+with the same name as mine in a higher level directory and reads its
+contents_. Optionally a `#inherits` may specify the filename to be
+searched for. In either case it is an error to *not* inherit the
+file.
 
 ## Implementation
 

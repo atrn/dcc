@@ -27,7 +27,7 @@ func Lib(target string, inputs []string) error {
 	} else if err != nil {
 		return err
 	}
-	newestInput, err := Newest(inputs)
+	newestInput, err := NewestOf(inputs)
 	if err == nil {
 		if newestInput.After(targetInfo.ModTime()) {
 			return createLib()
