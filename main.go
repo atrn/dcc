@@ -57,6 +57,11 @@ var (
 	//
 	DepsDir string
 
+	// ObjsDir is the name of the directory where object files
+	// are written. It is usually a relative path, relative to
+	// the source file.
+	ObjsDir string
+
 	// Quiet disables most messages when true. Usually dcc will
 	// print, to stderr, the commands being executed.
 	//
@@ -92,10 +97,10 @@ func main() {
 	CXXFLAGSFile := Getenv("CXXFLAGSFILE", "CXXFLAGS")
 	LDFLAGSFile := Getenv("LDFLAGSFILE", "LDFLAGS")
 	LIBSFile := Getenv("LIBSFILE", "LIBS")
-
-	NumJobs = GetenvInt("NJOBS", 2+runtime.NumCPU())
-	DepsDir = Getenv("DCCDEPS", platform.DefaultDepsDir)
 	DccDir = Getenv("DCCDIR", ".dcc")
+	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir)
+	ObjsDir = Getenv("OBJDIR", ".")
+	NumJobs = GetenvInt("JOBS", 2+runtime.NumCPU())
 
 	_, err := Stat(DccDir)
 	if os.IsNotExist(err) {
@@ -318,6 +323,13 @@ func main() {
 				NumJobs = n
 			}
 
+		case arg == "--objdir":
+			if i++; i < len(os.Args) {
+				ObjsDir = os.Args[i]
+			} else {
+				log.Fatalf("%s: directory name required", arg)
+			}
+
 		case arg == "--exe":
 			if i++; i < len(os.Args) {
 				outputPathname = os.Args[i]
@@ -437,10 +449,11 @@ func main() {
 		dasho = ""
 	}
 
+	// objdir is the object file directory.
 	//
 	objdir := dasho
 	if objdir == "" {
-		objdir = "."
+		objdir = ObjsDir
 	}
 
 	// Next, replace any source file names with their object file
@@ -592,6 +605,8 @@ Non-compiler Options:
     --exe path	Create executable program 'path'.
     --lib path	Create static library 'path'.
     --dll path	Create shared/dynamic library 'path'.
+    --objdir path
+		Create object files in 'path'.
     -j[N]       Use 'N' compile jobs (note single dash, default is one per CPU).
     --cpp	Compile source files as C++.
     --force     Ignore dependencies, always compile/link/lib.
@@ -603,7 +618,8 @@ Non-compiler Options:
 Environment
     CC          C compiler (%s).
     CXX         C++ compiler (%s).
-    DCCDEPS	Name of .d file directory (%s).
+    DEPSDIR	Name of .d file directory (%s).
+    OBJDIR	Name of .o file directory (%s).
     DCCDIR	Name of the dcc-options directory (%s).
     NJOBS       Number of compile job (%d).
 
@@ -655,6 +671,7 @@ of the different options files and select specific options.
 		platform.DefaultCC,
 		platform.DefaultCXX,
 		platform.DefaultDepsDir,
+		ObjsDir,
 		DccDir,
 		runtime.NumCPU(),
 		runtime.GOOS,
