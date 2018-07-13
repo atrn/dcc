@@ -350,3 +350,30 @@ marked _phony_ as we rely on `dcc` to take care of things.
 
 Until the `dcc`'s `--clean` option is implemented the `clean` target
 has to `rm -rf` a directory created by `dcc`.
+
+## Environment Variables
+
+- CC (or $CCFILE)  
+Name of the C compiler.
+- CXX (or $CXXFILE)  
+Name of the C++ compiler.
+- CCFILE  
+Name of the file that names the C compiler.
+- CXXFILE  
+Name of the file that names the C++ compiler.
+- CFLAGSFILE  
+Name of the C options file.
+- CXXFLAGSFILE  
+Name of the C++ options files.
+- LDFLAGSFILE  
+Name of the linker options file.
+- LIBSFILE  
+Name of the linker _LIBS_ file.
+- DCCDIR  
+Name of the `.dcc` directory.
+- DEPSDIR  
+Name of the `.dcc.d` dependency file directory.
+- OBJDIR  
+Name of the object file directory.
+- JOBS  
+Number of compilations to run in parallel.
