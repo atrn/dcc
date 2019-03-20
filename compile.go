@@ -162,37 +162,34 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 		return current, err
 	}
 
-	UpToDate := func() (bool, error) {
-		return result(true, nil, "target up to date")
-	}
-	OutOfDate := func(caption string) (bool, error) {
+	outOfDate := func(caption string) (bool, error) {
 		return result(false, nil, caption)
 	}
-	Error := func(err error, caption string) (bool, error) {
-		return result(false, err, caption)
+
+	badstat := func(filename string, err error) (bool, error) {
+		return result(false, err, fmt.Sprintf("%q: %s", filename, err.Error()))
 	}
 
 	targetInfo, err := Stat(target)
 	switch {
 	case os.IsNotExist(err):
-		return OutOfDate("target does not exist")
+		return outOfDate("target does not exist")
 	case err != nil:
-		return Error(err, "error occurred when checking target file existence")
+		return badstat(target, err)
 	case IsNewer(sourceInfo, targetInfo):
-		return OutOfDate("source is newer than target")
+		return outOfDate("source newer than target")
 	case IsNewer(options.FileInfo(), targetInfo):
-		return OutOfDate("compiler options file is newer than target")
+		return outOfDate("compiler options file newer than target")
 	}
-
 	for _, filename := range deps {
 		switch info, err := Stat(filename); {
 		case os.IsNotExist(err):
-			return OutOfDate(fmt.Sprintf("%q dependent file does not exist", filename))
+			return outOfDate(fmt.Sprintf("%q: dependent file does not exist", filename))
 		case err != nil:
-			return Error(err, fmt.Sprintf("%q: error when checking dependent file", filename))
+			return badstat(filename, err)
 		case IsNewer(info, targetInfo):
-			return OutOfDate(fmt.Sprintf("%q dependency is newer than target", filename))
+			return outOfDate(fmt.Sprintf("%q: dependency newer than target", filename))
 		}
 	}
-	return UpToDate()
+	return result(true, nil, "target up to date")
 }
