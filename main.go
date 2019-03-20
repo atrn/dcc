@@ -68,11 +68,11 @@ var (
 	//
 	Quiet = false
 
-	// Verbose enables messages.
+	// Verbose enables messages when true.
 	//
 	Verbose = false
 
-	// Debug enables debugging features if true.
+	// Debug enables debug output when true.
 	//
 	Debug = false
 )

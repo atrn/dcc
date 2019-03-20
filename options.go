@@ -119,37 +119,8 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	for input.Scan() {
 		line := strings.TrimSpace(input.Text())
 		if strings.HasPrefix(line, "#inherits") {
-			inheritedFilename := filepath.Base(filename)
-			fields := strings.Fields(line)
-			switch numFields := len(fields); {
-			case numFields > 2:
-				return false, fmt.Errorf("malformed '#inherits' line: %s", line)
-			case numFields == 2:
-				inheritedFilename = fields[1]
-				if filepath.Dir(inheritedFilename) != "." {
-					return false, fmt.Errorf("%q: '#inherits' filename may not contain path elements", inheritedFilename)
-				}
-			}
-			path, _, found, err := FindFileFromDirectory(
-				inheritedFilename,
-				filepath.Join(filepath.Dir(filename), ".."),
-				nil,
-			)
-			if err != nil {
+			if err := o.inheritFile(line, filename, filter); err != nil {
 				return false, err
-			}
-			if !found {
-				return false, fmt.Errorf("%q: no file found to '#inherits'", filename)
-			}
-			if Debug {
-				log.Printf("DEBUG: %q #inherits -> %q", filename, path)
-			}
-			ok, err := o.ReadFromFile(path, filter)
-			if err != nil {
-				return false, err
-			}
-			if !ok {
-				return false, fmt.Errorf("%q: error reading file", path)
 			}
 			continue
 		}
@@ -164,6 +135,45 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 		}
 	}
 	return true, nil
+}
+
+func (o *Options) inheritFile(line string, filename string, filter func(string) string) error {
+	inheritedFilename := filepath.Base(filename) // CXXFLAGS, CFLAGS, etc...
+	fields := strings.Fields(line)
+	switch numFields := len(fields); {
+	case numFields > 2:
+		return fmt.Errorf("%q - malformed '#inherits' line", line)
+	case numFields == 2:
+		inheritedFilename = fields[1]
+		if filepath.Dir(inheritedFilename) != "." {
+			return fmt.Errorf("%q: '#inherits' filename cannot contain path elements", inheritedFilename)
+		}
+	}
+	path, _, found, err := FindFileFromDirectory(
+		inheritedFilename,
+		filepath.Clean(filepath.Join(filepath.Dir(filename), "..")),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("%q: file not found '#inherits'", inheritedFilename)
+	}
+	if Debug {
+		log.Printf("DEBUG: %q #inherits -> %q", filename, path)
+	}
+
+	ok, err := o.ReadFromFile(path, filter)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return fmt.Errorf("%q: error reading file", path)
+	}
+
+	return nil
 }
 
 //
