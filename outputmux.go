@@ -19,11 +19,12 @@ import (
 // each Writer is NOT interleaved when written to a single output.
 //
 // The OutputMux NewWriter method returns an io.WriteCloser that lets
-// it user write via the OutputMux. Any output is cached until the
-// writer is closed at which time the OutputMux flushes the data to
-// its output Writer. Presently there is no limit to the amount of
-// data buffered by the output mux, this should only be a concern when
-// using C++ (that's a joke...template errors).
+// it user write via the OutputMux. Data written to that WriteCloser
+// is held in memory until Close() is called. At that time the buffered
+// data is flushed to its output io.Writer. There is no limit to the
+// amount of data buffered in an output mux io.Writer(Closer) but this
+// should only be of concern when building modern C++ with template
+// errors (which can produce quite larges amounts of error output).
 //
 type OutputMux struct {
 	w    io.Writer         // output
@@ -121,7 +122,7 @@ func (om *OutputMux) NewWriter() *os.File {
 // Close closes the receiver, stopping any processing of clients and
 // flushing any buffered output.
 //
-// Close sends a stop signal to the cause the receiver's Run method to
+// Close sends a stop signal to the cause the receiver's run method to
 // stop processing and awaits the, ignored, response indicating
 // processing has stopped.
 //

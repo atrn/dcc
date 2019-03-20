@@ -12,10 +12,10 @@ import (
 	"runtime"
 )
 
-// The Platform type defines various platform-specific values and
-// functions. There is a single global value of this type, called
-// platform, defined by the platform_xxx.go file for the target
-// system.
+// The Platform type defines a number of platform-specific values and
+// functions. Code defines a single global value, platform, of type
+// Platform which is defined in the platform_xxx.go file used for the
+// target system.
 //
 type Platform struct {
 	DefaultCC         string
