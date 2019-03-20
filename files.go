@@ -17,7 +17,7 @@ import (
 
 // CurrentDirectory is the path of the process working directory at startup
 //
-var CurrentDirectory = GetCurrentDirectory()
+var CurrentDirectory = MustGetwd()
 
 // NewestOf returns the os.FileInfo for the most recently
 // modified file in the slice of files. Or an error if one occurs.

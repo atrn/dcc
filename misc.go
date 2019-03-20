@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // GetProgramName returns the command name used to run this program.
@@ -75,10 +76,10 @@ func ConfigureLogger(prefix string) {
 	log.SetPrefix(prefix + ": ")
 }
 
-// GetCurrentDirectory returns PWD without requiring users to deal
-// with that pesky error. Any errors are fatal.
+// MustGetwd returns PWD without requiring users to deal with that
+// pesky error. Any errors are fatal.
 //
-func GetCurrentDirectory() string {
+func MustGetwd() string {
 	s, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -91,6 +92,9 @@ func GetCurrentDirectory() string {
 // command's standard input is connected to /dev/null and the output
 // stream connected to our standard output.
 //
+
+var serializeCmdStart sync.Mutex
+
 func Exec(path string, args []string, stderr io.Writer) error {
 	if Debug {
 		log.Println("EXEC:", path, strings.Join(args, " "))
@@ -99,5 +103,20 @@ func Exec(path string, args []string, stderr io.Writer) error {
 	cmd.Stdin = nil
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = stderr
-	return cmd.Run()
+
+	//  I'm seeing problems performing concurrent execs'ing on
+	//  Linux (Centos 6, 64 bit) where commands are claimed to
+	//  have been run but don't actually execute.  Now there's
+	//  nothing in the docs to say that exec (and os.StartProcess)
+	//  are safe from concurrent gooutines so I'm probably doing
+	//  something bad and it just happens to work on the platforms
+	//  I mostly use (Macos and FreeBSD).
+	//
+	serializeCmdStart.Lock()
+	err := cmd.Start()
+	serializeCmdStart.Unlock()
+	if err == nil {
+		err = cmd.Wait()
+	}
+	return err
 }
