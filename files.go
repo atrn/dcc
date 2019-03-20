@@ -19,10 +19,13 @@ import (
 //
 var CurrentDirectory = MustGetwd()
 
-// NewestOf returns the os.FileInfo for the most recently
-// modified file in the slice of files. Or an error if one occurs.
+// NewestOf returns the os.FileInfo time for the most recently
+// modified file in the slice of file names.
+//
 // Each file is stat'd and its modification time used to determine
-// if it is newer than any previous file.
+// if it is newer than any previous file. Any error doing this
+// results in an non-nil error return and the most recently
+// set most recent time.
 //
 func NewestOf(filenames []string) (time.Time, error) {
 	var t time.Time
