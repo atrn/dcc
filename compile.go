@@ -146,6 +146,13 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 	return ActualCompiler.Compile(filename, ofile, depsFilename, options.Values, stderr)
 }
 
+func Pick(pred bool, a string, b string) string {
+	if pred {
+		return a
+	}
+	return b
+}
+
 // IsUptoDate determines if a given target file is up to date with
 // respect to the input files, and compiler options, that led any
 // previous generation of the target file.
@@ -153,11 +160,8 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *Options) (bool, error) {
 	result := func(current bool, err error, caption string) (bool, error) {
 		if Debug {
-			how := "up to"
-			if !current {
-				how = "out of"
-			}
-			log.Printf("DEPS: %q (%q) -> (%s date, %v) - %s", sourceInfo.Name(), target, how, err, caption)
+			log.Printf("DEPS: %q (%q) -> (%s date, %v) - %s",
+				sourceInfo.Name(), target, Pick(current, "up to", "out of"), err, caption)
 		}
 		return current, err
 	}
@@ -176,18 +180,18 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 		return outOfDate("target does not exist")
 	case err != nil:
 		return badstat(target, err)
-	case IsNewer(sourceInfo, targetInfo):
+	case FileIsNewer(sourceInfo, targetInfo):
 		return outOfDate("source newer than target")
-	case IsNewer(options.FileInfo(), targetInfo):
+	case FileIsNewer(options.FileInfo(), targetInfo):
 		return outOfDate("compiler options file newer than target")
 	}
 	for _, filename := range deps {
-		switch info, err := Stat(filename); {
+		switch depInfo, err := Stat(filename); {
 		case os.IsNotExist(err):
 			return outOfDate(fmt.Sprintf("%q: dependent file does not exist", filename))
 		case err != nil:
 			return badstat(filename, err)
-		case IsNewer(info, targetInfo):
+		case FileIsNewer(depInfo, targetInfo):
 			return outOfDate(fmt.Sprintf("%q: dependency newer than target", filename))
 		}
 	}

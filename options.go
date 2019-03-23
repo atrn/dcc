@@ -158,8 +158,9 @@ func (o *Options) inheritFile(line string, filename string, filter func(string) 
 		return err
 	}
 	if !found {
-		return fmt.Errorf("%q: file not found '#inherits'", inheritedFilename)
+		return fmt.Errorf("%q: #inherited file not found", inheritedFilename)
 	}
+
 	if Debug {
 		log.Printf("DEBUG: %q #inherits -> %q", filename, path)
 	}

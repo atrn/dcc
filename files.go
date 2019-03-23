@@ -44,9 +44,10 @@ func NewestOf(filenames []string) (time.Time, error) {
 	return t, nil
 }
 
-// IsNewer returns true if the first file is newer than the second.
+// FileIsNewer returns true if the first file is newer than the second
+// as identified by their FileInfo's modification time.
 //
-func IsNewer(a os.FileInfo, b os.FileInfo) bool {
+func FileIsNewer(a os.FileInfo, b os.FileInfo) bool {
 	switch {
 	case a == nil:
 		return false

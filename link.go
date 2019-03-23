@@ -72,7 +72,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		if !strings.HasPrefix(name, "-l") {
 			if libInfo, err := Stat(name); err != nil {
 				return err
-			} else if IsNewer(libInfo, targetInfo) {
+			} else if FileIsNewer(libInfo, targetInfo) {
 				return link()
 			}
 		}
