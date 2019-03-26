@@ -1,0 +1,25 @@
+package main
+
+type RunningMode enum {
+	// ModeNotSpecified means the user hasn't explicitly defined a
+	// running mode, yet.  This is the initial, default, mode.
+	ModeNotSpecified
+
+	// CompileAndLink means "build an exectable", the usual
+	// default cc(1) behaviour.
+	CompileAndLink
+
+	// CompileSourceFiles means the user supplied a -c switch
+	// and no linking is done, only compilation.
+	CompileSourceFiles
+
+	// CompileAndMakeLib means the user supplied the dcc --lib switch
+	// to create a static library.
+	CompileAndMakeLib
+
+	// CompileAndMakeDLL means the user supplied the dcc --dll switch.
+	CompileAndMakeDLL
+
+	// CleanupOutputFiles means the user supplied the dcc --clean switch.
+	CleanupOutputFiles // --clean
+}

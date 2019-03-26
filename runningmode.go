@@ -1,52 +1,31 @@
-// dcc - dependency-driven C/C++ compiler front end
-//
-// Copyright © A.Newman 2015.
-//
-// This source code is released under version 2 of the  GNU Public License.
-// See the file LICENSE for details.
-//
+// DO NOT EDIT.
+// Generated: 2019-03-26 17:15:17.083389 +1100 AEDT m=+0.000946167
+// From: runningmode.enum
 
 package main
 
-// RunningMode defines the manner in which dcc was invoked.
-//
-// We derive the mode from the compiler and dcc options and can then
-// just check the mode to determine actions.
-//
 type RunningMode int
 
 const (
-	// ModeNotSpecified means the user hasn't explicitly defined a
-	// running mode, yet.  This is the initial, default, mode.
-	ModeNotSpecified RunningMode = iota
-
-	// CompileAndLink means "build an exectable", the usual
-	// default cc(1) behaviour.
+	RunningMode_Zero_ RunningMode = iota
+	ModeNotSpecified
 	CompileAndLink
-
-	// CompileSourceFiles means the user supplied a -c switch
-	// and no linking is done, only compilation.
 	CompileSourceFiles
-
-	// CompileAndMakeLib means the user supplied the dcc --lib switch
-	// to create a static library.
 	CompileAndMakeLib
-
-	// CompileAndMakeDLL means the user supplied the dcc --dll switch.
 	CompileAndMakeDLL
-
-	// CleanupOutputFiles means the user supplied the dcc --clean switch.
-	CleanupOutputFiles // --clean
+	CleanupOutputFiles
 )
 
-func (rm RunningMode) String() string {
-	switch rm {
+func (v RunningMode) String() string {
+	switch v {
+	case RunningMode_Zero_:
+		return "*!!!* UNINITIALIZED RunningMode VALUE *!!!*"
 	case ModeNotSpecified:
 		return "ModeNotSpecified"
-	case CompileSourceFiles:
-		return "CompileSourceFiles"
 	case CompileAndLink:
 		return "CompileAndLink"
+	case CompileSourceFiles:
+		return "CompileSourceFiles"
 	case CompileAndMakeLib:
 		return "CompileAndMakeLib"
 	case CompileAndMakeDLL:
@@ -54,6 +33,8 @@ func (rm RunningMode) String() string {
 	case CleanupOutputFiles:
 		return "CleanupOutputFiles"
 	default:
-		panic("invalid RunningMode value")
+		return "*!* INVALID RunningMode VALUE *!*"
 	}
 }
+
+

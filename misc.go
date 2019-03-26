@@ -6,6 +6,8 @@
 // See the file LICENSE for details.
 //
 
+//go:generate enums
+
 package main
 
 import (
