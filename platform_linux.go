@@ -8,6 +8,42 @@
 
 package main
 
+var lib32 = []string{
+	"/usr/local/lib",
+	"/usr/lib32",
+	"/usr/lib/gcc/x86_64-linux-gnu/8",
+	"/usr/lib",
+	"/lib",
+}
+
+var lib64 = []string{
+	"/usr/local/lib",
+	"/usr/lib",
+	"/usr/lib/x86_64-linux-gnu",
+	"/lib/x86_64-linux-gnu",
+	"/lib",
+}
+
+func linuxDefaultLibraryPaths() []string {
+	if runtime.ARCH == "amd64" {
+		return lib64
+	}
+	return lib32
+}
+
+func linuxSelectTarget(target string) error {
+	switch target {
+	case "-m32":
+		platform.LibraryPaths = lib32
+		return nil
+	case "-m64":
+		platform.LibraryPaths = lib64
+		return nil
+	default:
+		return fmt.Errof("%s: unhandled target", target)
+	}
+}
+
 var platform = Platform{
 	DefaultCC:         "cc",
 	DefaultCXX:        "c++",
@@ -18,7 +54,8 @@ var platform = Platform{
 	StaticLibPrefix:   "lib",
 	StaticLibSuffix:   ".a",
 	DefaultExecutable: "a.out",
-	LibraryPaths:      []string{"/usr/local/lib64", "/usr/local/lib", "/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/lib/x86_64-linux-gnu", "lib64", "/lib"},
+	LibraryPaths:      linuxDefaultLibraryPaths(),
 	CreateLibrary:     ElfCreateLibrary,
 	CreateDLL:         ElfCreateDLL,
+	SelectTarget:      linuxSelectTarget,
 }

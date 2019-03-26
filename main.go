@@ -113,6 +113,7 @@ func main() {
 	runningMode := ModeNotSpecified
 	outputPathname := ""
 	dasho := ""
+	dashm := ""
 
 	cCompiler := makeCompilerOption(CCFile, platform.DefaultCC)
 	cppCompiler := makeCompilerOption(CXXFile, platform.DefaultCXX)
@@ -395,6 +396,18 @@ func main() {
 		case arg == "-c":
 			setMode(arg, CompileSourceFiles)
 
+		case arg == "-m32":
+			if dashm != "" && dashm != arg {
+				log.Fatalf("conflicting options %s and %s", dashm, arg)
+			}
+			dashm = arg
+
+		case arg == "-m64":
+			if dashm != "" && dashm != arg {
+				log.Fatalf("conflicting options %s and %s", dashm, arg)
+			}
+			dashm = arg
+
 		default:
 			compilerOptions.Append(arg)
 		}
@@ -423,6 +436,17 @@ func main() {
 	//
 	if runningMode == ModeNotSpecified {
 		runningMode = CompileAndLink
+	}
+
+	// Deal with any -m32/-m64 option
+	//
+	if dashm != "" {
+		if platform.SelectTarget != nil {
+			err = platform.SelectTarget(dashm)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Deal with any -o option.
