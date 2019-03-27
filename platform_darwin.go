@@ -36,7 +36,7 @@ func libtool(args []string) error {
 	if !Quiet {
 		if Verbose {
 			fmt.Fprintln(os.Stderr, cmd, strings.Join(args, " "))
-		} else {
+		} else if !Quiet {
 			filename := ""
 			nargs := len(args)
 			for index, arg := range args {

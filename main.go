@@ -618,7 +618,7 @@ func makeCompilerOption(name, defcmd string) *Options {
 // writer and exits the process with the given status.
 //
 func UsageError(w io.Writer, status int) {
-	fmt.Fprintf(w, `Usage: %s [options] filename...
+	fmt.Fprintf(w, `Usage: %s [options] [compiler-options] filename...
 
 Options, other than those listed below, are passed to the underlying
 compiler. Any -c or -o and similar options are noted and used to control
@@ -626,70 +626,70 @@ linking and object file locations. Compilation is done in parallel using,
 by default, as many jobs as there are CPUs and dependency files written
 to a directory alongside the object files.
 
-Non-compiler Options:
-    --exe path	Create executable program 'path'.
-    --lib path	Create static library 'path'.
-    --dll path	Create shared/dynamic library 'path'.
-    --objdir path
-		Create object files in 'path'.
-    -j[N]       Use 'N' compile jobs (note single dash, default is one per CPU).
-    --cpp	Compile source files as C++.
-    --force     Ignore dependencies, always compile/link/lib.
-    --clean     Remove dcc-maintained files.
-    --quiet     Disable non-error messages.
-    --verbose   Show more output.
-    --debug     Enable debug messages.
+Options:
+    --exe path	    Create executable program 'path'.
+    --lib path	    Create static library 'path'.
+    --dll path	    Create shared/dynamic library 'path'.
+    --objdir path   Create object files in 'path'.
+    -j[N]           Use 'N' compile jobs (note single dash, default is one per CPU).
+    --cpp	    Compile source files as C++.
+    --force         Ignore dependencies, always compile/link/lib.
+    --clean         Remove dcc-maintained files.
+    --quiet         Disable non-error messages.
+    --verbose       Show more output.
+    --debug         Enable debug messages.
+
+With anything else is passed to the underlying compiler.
 
 Environment
-    CC          C compiler (%s).
-    CXX         C++ compiler (%s).
-    DEPSDIR	Name of .d file directory (%s).
-    OBJDIR	Name of .o file directory (%s).
-    DCCDIR	Name of the dcc-options directory (%s).
-    NJOBS       Number of compile job (%d).
+    CC              C compiler (%s).
+    CXX             C++ compiler (%s).
+    DEPSDIR	    Name of .d file directory (%s).
+    OBJDIR	    Name of .o file directory (%s).
+    DCCDIR	    Name of the dcc-options directory (%s).
+    NJOBS           Number of compile job (%d).
 
 The following variables define the actual names used for
-the options files under "Files".
+the options files (see "Files" below).
 
-    CCFILE	Name of the CC options file.
-    CXXFILE	Name of the CXX options files.
-    CFLAGSFILE	Name of the CFLAGS options file.
-    CXXFLAGSFILE Name of the CXXFLAGS options file.
-    LDFLAGSFILE	Name of the LDFLAGS options file.
-    LIBSFILE	Name of the LIBS options file.
+    CCFILE	    Name of the CC options file.
+    CXXFILE	    Name of the CXX options files.
+    CFLAGSFILE	    Name of the CFLAGS options file.
+    CXXFLAGSFILE    Name of the CXXFLAGS options file.
+    LDFLAGSFILE	    Name of the LDFLAGS options file.
+    LIBSFILE	    Name of the LIBS options file.
 
 Files
-    CC          C compiler name.
-    CXX         C++ compiler name.
-    CFLAGS      Compiler options for C.
-    CXXFLAGS    Compiler options for C++.
-    LDFLAGS     Linker options.
-    LIBS        Libraries and library paths.
+    CC              C compiler name.
+    CXX             C++ compiler name.
+    CFLAGS          Compiler options for C.
+    CXXFLAGS        Compiler options for C++.
+    LDFLAGS         Linker options.
+    LIBS            Libraries and library paths.
 
 Options files may be put in a directory named by the DCCDIR
-environment variable. This defaults to .dcc, or if that does
-not exist, the current directory.
+environment variable, ".dcc" by default, or if that directory
+does not exist, the current directory.
 
-Options files are text files storing compiler and linker
-options. The contents are turned into program options by
-removing #-style line comments and using the whitespace
-separated words as individual program arguments. Options
-files act as dependencies and invoke rebuilds when changed.
+Options files are text files storing compiler and linker options.
+The contents are turned into program options by removing #-style
+line comments and using the whitespace separated words as individual
+program arguments. Options files act as dependencies and invoke
+rebuilds when changed.
 
-Platform-specific file naming may be used to have different
-options files for different platforms and/or architectures.
-When opening a file dcc appends extensions formed from the
-host OS and archtecture to the file name and tries to use
-those files. The extension ".<os>_<arch>" is tried first
-followed by ".<os>" and finally no extension.
+Platform-specific file naming may be used to have different options
+files for different platforms and/or architectures.  When opening a
+file dcc appends extensions formed from the host OS and archtecture
+to the file name and tries to use those files. The first extension
+tried is of the form ".<os>_<arch>", followed by ".<os>" and finally
+no extension.
 
-<os> is something like "windows", "linux", "darwin",
-"freebsd" and so on.  <arch> is one of  "amd64", "386",
-"arm8le" , "s390x", etc...  The actual names come from
-the Go runtime.  This host is "%s_%s".
+<os> is something like "windows", "linux", "darwin", "freebsd".
+<arch> is one of  "amd64", "386", "arm8le" , "s390x", etc...
+The actual names come from the Go runtime.  This host is "%s_%s".
 
-Environment variables may be used to define the names
-of the different options files and select specific options.
+Environment variables may be used to define the names of the
+different options files and select specific options.
 
 `,
 		Myname,

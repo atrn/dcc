@@ -21,8 +21,10 @@ import (
 //
 func ElfCreateLibrary(filename string, objectFiles []string) error {
 	args := append([]string{"rc", filename}, objectFiles...)
-	if !Quiet {
+	if Verbose {
 		fmt.Fprintln(os.Stderr, "ar", strings.Join(args, " "))
+	} else if !Quiet {
+		fmt.Fprintln(os.Stderr, "ar", filename)
 	}
 	return Exec("ar", args, os.Stderr)
 }
@@ -34,8 +36,10 @@ func ElfCreateDLL(filename string, objectFiles []string, libraryFiles []string, 
 	args := []string{"-shared", "-o", filename}
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)
-	if !Quiet {
+	if Verbose {
 		fmt.Fprintln(os.Stderr, ActualCompiler.Name(), strings.Join(args, " "))
+	} else {
+		fmt.Fprintln(os.Stderr, ActualCompiler.Name(), filename)
 	}
 	return Exec(ActualCompiler.Name(), args, os.Stderr)
 }
