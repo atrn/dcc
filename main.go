@@ -442,7 +442,7 @@ func main() {
 	//
 	if dashm != "" {
 		if platform.SelectTarget != nil {
-			err = platform.SelectTarget(dashm)
+			err = platform.SelectTarget(&platform, dashm)
 		}
 		if err != nil {
 			log.Fatal(err)

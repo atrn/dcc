@@ -30,7 +30,7 @@ type Platform struct {
 	LibraryPaths      []string
 	CreateLibrary     func(string, []string) error
 	CreateDLL         func(string, []string, []string, []string) error
-	SelectTarget      func(string) error
+	SelectTarget      func(* Platform, string) error
 }
 
 // StaticLibrary transforms a filename "stem" to the name of a

@@ -8,6 +8,11 @@
 
 package main
 
+import (
+	"fmt"
+	"runtime"
+)
+
 var lib32 = []string{
 	"/usr/local/lib",
 	"/usr/lib32",
@@ -25,22 +30,22 @@ var lib64 = []string{
 }
 
 func linuxDefaultLibraryPaths() []string {
-	if runtime.ARCH == "amd64" {
+	if runtime.GOARCH == "amd64" {
 		return lib64
 	}
 	return lib32
 }
 
-func linuxSelectTarget(target string) error {
+func linuxSelectTarget(p *Platform, target string) error {
 	switch target {
 	case "-m32":
-		platform.LibraryPaths = lib32
+		p.LibraryPaths = lib32
 		return nil
 	case "-m64":
-		platform.LibraryPaths = lib64
+		p.LibraryPaths = lib64
 		return nil
 	default:
-		return fmt.Errof("%s: unhandled target", target)
+		return fmt.Errorf("%s: unhandled target", target)
 	}
 }
 
