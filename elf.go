@@ -38,8 +38,8 @@ func ElfCreateDLL(filename string, objectFiles []string, libraryFiles []string, 
 	args = append(args, libraryFiles...)
 	if Verbose {
 		fmt.Fprintln(os.Stderr, ActualCompiler.Name(), strings.Join(args, " "))
-	} else {
-		fmt.Fprintln(os.Stderr, ActualCompiler.Name(), filename)
+	} else if !Quiet {
+		fmt.Fprintln(os.Stderr, "ld", filename)
 	}
 	return Exec(ActualCompiler.Name(), args, os.Stderr)
 }
