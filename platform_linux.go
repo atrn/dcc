@@ -24,8 +24,10 @@ var lib32 = []string{
 var lib64 = []string{
 	"/usr/local/lib",
 	"/usr/lib",
+	"/usr/lib64",
 	"/usr/lib/x86_64-linux-gnu",
 	"/lib/x86_64-linux-gnu",
+	"/lib64",
 	"/lib",
 }
 
