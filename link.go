@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -27,7 +28,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		var args []string
 		args = append(args, options.Values...)
 		args = append(args, inputs...)
-		args = append(args, libs.Values...)
+		args = append(args, endash(libs.Values)...)
 		args = append(args, frameworks...)
 		args = append(args, "-o", target)
 		if !Quiet {
@@ -78,4 +79,32 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		}
 	}
 	return nil
+}
+
+var standardPath map[string]struct{} = nil
+
+func endash(values []string) (dashed []string) {
+	if standardPath == nil {
+		standardPath = make(map[string]struct{})
+		for _, name := range platform.LibraryPaths {
+			standardPath[name] = struct{}{}
+		}
+	}
+	for _, name := range values {
+		dir, base := filepath.Dir(name), filepath.Base(name)
+		if _, found := standardPath[dir]; found {
+			s := strings.TrimSuffix(base, platform.StaticLibSuffix)
+			if s == base {
+				s = strings.TrimSuffix(base, platform.DynamicLibSuffix)
+			}
+			t := strings.TrimPrefix(s, platform.StaticLibPrefix)
+			if t == s {
+				t = strings.TrimPrefix(s, platform.DynamicLibPrefix)
+			}
+			dashed = append(dashed, "-l" + t)
+		} else {
+			dashed = append(dashed, name)
+		}
+	}
+	return dashed
 }
