@@ -118,7 +118,13 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	input := bufio.NewScanner(file)
 	for input.Scan() {
 		line := strings.TrimSpace(input.Text())
-		if strings.HasPrefix(line, "#inherits") {
+		if strings.HasPrefix(line, "#include") {
+			if err := o.includeFile(line, filename, filter); err != nil {
+				return false, err
+			}
+			continue
+		}
+		if strings.HasPrefix(line, "#inherit") {
 			if err := o.inheritFile(line, filename, filter); err != nil {
 				return false, err
 			}
@@ -137,17 +143,35 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	return true, nil
 }
 
-func (o *Options) inheritFile(line string, filename string, filter func(string) string) error {
-	inheritedFilename := filepath.Base(filename) // CXXFLAGS, CFLAGS, etc...
+func getFilename(why, line, filename string) (string, error) {
+	filename = filepath.Base(filename) // CXXFLAGS, CFLAGS, etc...
 	fields := strings.Fields(line)
 	switch numFields := len(fields); {
-	case numFields > 2:
-		return fmt.Errorf("%q - malformed '#inherits' line", line)
+	case numFields == 1:
+		return filename, nil
 	case numFields == 2:
-		inheritedFilename = fields[1]
-		if filepath.Dir(inheritedFilename) != "." {
-			return fmt.Errorf("%q: '#inherits' filename cannot contain path elements", inheritedFilename)
-		}
+		return fields[1], nil
+	default:
+		return "", fmt.Errorf("%q - malformed '%s' line", why, line)
+	}
+}
+
+func (o *Options) includeFile(line string, filename string, filter func(string) string) error {
+	path, err := getFilename("#include", line, filename)
+	if err != nil {
+		return err
+	}
+	_, err = o.ReadFromFile(path, filter)
+	return err
+}
+
+func (o *Options) inheritFile(line string, filename string, filter func(string) string) error {
+	inheritedFilename, err := getFilename("#inherit", line, filename)
+	if err != nil {
+		return err
+	}
+	if filepath.Dir(inheritedFilename) != "." {
+		return fmt.Errorf("%q: '#inherit' filename cannot contain path elements", inheritedFilename)
 	}
 	path, _, found, err := FindFileFromDirectory(
 		inheritedFilename,
@@ -162,7 +186,7 @@ func (o *Options) inheritFile(line string, filename string, filter func(string) 
 	}
 
 	if Debug {
-		log.Printf("DEBUG: %q #inherits -> %q", filename, path)
+		log.Printf("DEBUG: %q #inherit -> %q", filename, path)
 	}
 
 	ok, err := o.ReadFromFile(path, filter)
