@@ -100,8 +100,6 @@ func Exec(path string, args []string, stderr io.Writer) error {
 	if Debug {
 		log.Println("EXEC:", path, strings.Join(args, " "))
 	}
-	cmd := exec.Command(path, args...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = nil, os.Stdout, stderr
 
 	// cmd.Run/cmd.Start are not safe to use concurrently (cmd.Run
 	// sometimes fails in strange ways, only on Linux so far).
@@ -110,7 +108,11 @@ func Exec(path string, args []string, stderr io.Writer) error {
 	// multiple commands at the same time.
 	//
 	serializeCmdStart.Lock()
+
+	cmd := exec.Command(path, args...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = nil, os.Stdout, stderr
 	err := cmd.Start()
+
 	serializeCmdStart.Unlock()
 
 	if err == nil {
