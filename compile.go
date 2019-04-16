@@ -146,13 +146,6 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 	return ActualCompiler.Compile(filename, ofile, depsFilename, options.Values, stderr)
 }
 
-func Pick(pred bool, a string, b string) string {
-	if pred {
-		return a
-	}
-	return b
-}
-
 // IsUptoDate determines if a given target file is up to date with
 // respect to the input files, and compiler options, that led any
 // previous generation of the target file.
@@ -160,8 +153,18 @@ func Pick(pred bool, a string, b string) string {
 func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *Options) (bool, error) {
 	result := func(current bool, err error, caption string) (bool, error) {
 		if Debug {
-			log.Printf("DEPS: %q (%q) -> (%s date, %v) - %s",
-				sourceInfo.Name(), target, Pick(current, "up to", "out of"), err, caption)
+			currency := "out of"
+			if current {
+				currency = "up to"
+			}
+			log.Printf(
+				"DEPS: %q (%q) -> (%s date, %v) - %s",
+				sourceInfo.Name(),
+				target,
+				currency,
+				err,
+				caption,
+			)
 		}
 		return current, err
 	}
