@@ -1,11 +1,21 @@
 # TODO
 
-## detect override headers and force re-build
+## detect overriden headers
 
-If a new header file, say `stdio.h`, is added to a directory on
-the include file search path so it is found *before* the previously
-used version of the header a re-build needs to occur. `dcc` won't
-detect that situation.
+If a new header file, say `stdio.h`, is added to a directory on the
+include file search path such that the code being built _would_ now
+include that file, we should re-build.
+
+This particular situation is not common however it is possible.  Some
+build enviromnents can be _messy_ and update or places things in odd
+ways - MacOS, Windows and, unfortunately, some Linux-based systems
+can update/install things underneath the user which can make this
+happen.
+
+Better safe than sorry.
+
+Without compiler support (telling us which files were *not* included)
+we have to figure that our ourselves.
 
 ## `cl.exe`
 
