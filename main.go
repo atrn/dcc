@@ -83,9 +83,13 @@ func main() {
 
 	// Enable debug as early as possible.
 
-	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i] == "--debug" {
-			Debug = true
+	if os.Getenv("DCCDEBUG") != "" {
+		Debug = true
+	} else {
+		for i := 1; i < len(os.Args); i++ {
+			if os.Args[i] == "--debug" {
+				Debug = true
+			}
 		}
 	}
 	if !Debug {
