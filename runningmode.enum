@@ -19,7 +19,4 @@ type RunningMode enum {
 
 	// CompileAndMakeDLL means the user supplied the dcc --dll switch.
 	CompileAndMakeDLL
-
-	// CleanupOutputFiles means the user supplied the dcc --clean switch.
-	CleanupOutputFiles // --clean
 }

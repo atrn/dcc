@@ -300,9 +300,6 @@ func main() {
 			//
 			collectInputFile(arg)
 
-		case arg == "--clean":
-			setMode(arg, CleanupOutputFiles)
-
 		case arg == "--cpp":
 			break // ignore, handled above
 
@@ -425,16 +422,6 @@ func main() {
 	}
 
 	// ----------------------------------------------------------------
-
-	// Cleaning overrides everything. We don't check anything and
-	// just remove the entire depsdir then quit.
-	//
-	// TODO: only delete what we create
-	//
-	if runningMode == CleanupOutputFiles {
-		exitStatus := 0
-		os.Exit(exitStatus)
-	}
 
 	// If no mode was explicitly specified compile and link like cc(1).
 	//

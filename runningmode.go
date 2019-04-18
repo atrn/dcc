@@ -1,6 +1,9 @@
 // DO NOT EDIT.
-// Generated: 2019-03-26 17:15:17.083389 +1100 AEDT m=+0.000946167
-// From: runningmode.enum
+//
+// Generated: Fri Apr 19 02:39:20 2019
+// From:      runningmode.enum
+// By:        andy
+//
 
 package main
 
@@ -13,7 +16,6 @@ const (
 	CompileSourceFiles
 	CompileAndMakeLib
 	CompileAndMakeDLL
-	CleanupOutputFiles
 )
 
 func (v RunningMode) String() string {
@@ -30,8 +32,6 @@ func (v RunningMode) String() string {
 		return "CompileAndMakeLib"
 	case CompileAndMakeDLL:
 		return "CompileAndMakeDLL"
-	case CleanupOutputFiles:
-		return "CleanupOutputFiles"
 	default:
 		return "*!* INVALID RunningMode VALUE *!*"
 	}

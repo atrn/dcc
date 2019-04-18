@@ -142,8 +142,6 @@ compiler,
   Get help.
 - --debug 
   Enable `dcc` debug output.
-- --clean 
-  Remove `dcc`-generated files.
 - --cpp 
   Compile source as C++ rather than C.
 - --force 
@@ -347,9 +345,6 @@ source files in one directory, can be as small as:
 
 The `program` target builds everything using `dcc`. It is marked
 marked _phony_ as we rely on `dcc` to take care of things.
-
-Until the `dcc`'s `--clean` option is implemented the `clean` target
-has to `rm -rf` a directory created by `dcc`.
 
 ## Environment Variables
 
