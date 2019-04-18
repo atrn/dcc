@@ -44,7 +44,8 @@ func (gcc *GccStyleCompiler) Name() string {
 // Compile runs the compiler to compile a source code to object code.
 //
 func (gcc *GccStyleCompiler) Compile(source, object, deps string, options []string, w io.Writer) error {
-	args := append(options, "-MD", "-MF", deps, "-c", source, "-o", object)
+	args := append([]string{}, options...)
+	args = append(args, "-MD", "-MF", deps, "-c", source, "-o", object)
 	return Exec(gcc.command, args, w)
 }
 
