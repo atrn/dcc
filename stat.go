@@ -14,22 +14,22 @@ import (
 )
 
 var (
-	// StatCache is a cache of os.Stat results.
+	// statCache is a cache of os.Stat results.
 	//
-	StatCache = make(map[string]os.FileInfo)
+	statCache = make(map[string]os.FileInfo)
 
-	// StatCacheMutex protects StatCache
+	// statCacheMutex protects statCache
 	//
-	StatCacheMutex sync.Mutex
+	statCacheMutex sync.Mutex
 )
 
 // Stat wraps os.Stat and caches the results.
 //
 func Stat(path string) (os.FileInfo, error) {
 
-	StatCacheMutex.Lock()
-	info, found := StatCache[path]
-	StatCacheMutex.Unlock()
+	statCacheMutex.Lock()
+	info, found := statCache[path]
+	statCacheMutex.Unlock()
 
 	if found {
 		return info, nil
@@ -59,11 +59,11 @@ func Stat(path string) (os.FileInfo, error) {
 		return nil, err
 	}
 
-	StatCacheMutex.Lock()
-	if _, found = StatCache[path]; !found {
-		StatCache[path] = info
+	statCacheMutex.Lock()
+	if _, found = statCache[path]; !found {
+		statCache[path] = info
 	}
-	StatCacheMutex.Unlock()
+	statCacheMutex.Unlock()
 
 	return info, nil
 }
@@ -72,7 +72,7 @@ func Stat(path string) (os.FileInfo, error) {
 // to ensure we re-stat the file and get its new modtime.
 //
 func ClearCachedStat(path string) {
-	StatCacheMutex.Lock()
-	delete(StatCache, path)
-	StatCacheMutex.Unlock()
+	statCacheMutex.Lock()
+	delete(statCache, path)
+	statCacheMutex.Unlock()
 }
