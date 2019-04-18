@@ -72,22 +72,20 @@ func (om *OutputMux) run() {
 	buffers := make(map[io.Reader][]string)
 
 	flush := func(r io.Reader) {
-		for _, s := range buffers[r] {
-			fmt.Fprintln(om.w, s)
-		}
-		buffers[r] = nil
-	}
-
-	flushall := func() {
-		for r := range buffers {
-			flush(r)
+		if slice, found := buffers[r]; found {
+			for _, line := range slice {
+				fmt.Fprintln(om.w, line)
+			}
+			buffers[r] = nil
 		}
 	}
 
 	for {
 		select {
 		case <-om.stop:
-			flushall()
+			for b := range buffers {
+				flush(b)
+			}
 			om.stop <- struct{}{}
 			return
 
