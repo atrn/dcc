@@ -26,7 +26,10 @@ import (
 // parallel compilations.
 //
 func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
+	// Assume success.
+	//
 	ok = true
+
 	// The standard error output of each compile is routed via an
 	// OutputMux which ensures output is not interleaved. We don't
 	// bother with standard output yet but probably should.
@@ -62,6 +65,7 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 					ofile := ObjectFilename(filename, objdir)
 					stderr := mux.NewWriter()
 					errs <- Compile(filename, options, ofile, stderr, objdir)
+					stderr.Close()
 				}
 			})
 			close(errs)
@@ -82,7 +86,6 @@ func CompileAll(sources []string, options *Options, objdir string) (ok bool) {
 // Compile a single source file, if required. Returns a non-nil error if compilation fails.
 //
 func Compile(filename string, options *Options, ofile string, stderr io.WriteCloser, objdir string) error {
-	defer stderr.Close()
 	if ofile == "" {
 		ofile = ObjectFilename(filename, objdir)
 	}
