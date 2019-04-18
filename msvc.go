@@ -25,7 +25,8 @@ func (cl *msvcCompiler) Name() string {
 }
 
 func (cl *msvcCompiler) Compile(source, object, deps string, options []string, w io.Writer) error {
-	args := append(options, "/showIncludes", "/c", source, "/Fo", object)
+	args := append([]string{}, options...)
+	args = append(args, "/showIncludes", "/c", source, "/Fo", object)
 	cmd := exec.Command(cl.Name(), args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Run()
