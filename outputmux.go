@@ -91,13 +91,14 @@ func (om *OutputMux) run() {
 			return
 
 		case msg := <-om.mux:
+			if _, ok := buffers[msg.source]; !ok {
+				buffers[msg.source] = make([]string, 0)
+			}
+			if msg.text != "" {
+				buffers[msg.source] = append(buffers[msg.source], msg.text)
+			}
 			if msg.eof {
 				flush(msg.source)
-			} else {
-				if _, ok := buffers[msg.source]; !ok {
-					buffers[msg.source] = make([]string, 0)
-				}
-				buffers[msg.source] = append(buffers[msg.source], msg.text)
 			}
 		}
 	}
