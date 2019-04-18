@@ -42,7 +42,7 @@ var headerFileSet = map[string]struct{}{
 	".h++": struct{}{},
 }
 
-func inset(set map[string]struct{}, path string) bool {
+func inSet(set map[string]struct{}, path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	_, found := set[ext]
 	return found
@@ -52,21 +52,21 @@ func inset(set map[string]struct{}, path string) bool {
 // of a C++ source file.
 //
 func IsCPlusPlusFile(path string) bool {
-	return inset(cppSet, path)
+	return inSet(cppSet, path)
 }
 
 // IsSourceFile returns true if the supplied pathname is that
 // of a C, C++ or Objective-C source file.
 //
 func IsSourceFile(path string) bool {
-	return inset(sourceFileSet, path)
+	return inSet(sourceFileSet, path)
 }
 
 // IsHeaderFile returns true if the supplied pathname is that
 // of a C/C++ header file.
 //
 func IsHeaderFile(path string) bool {
-	return inset(headerFileSet, path)
+	return inSet(headerFileSet, path)
 }
 
 // IsLibraryFile returns true if the supplied pathname is

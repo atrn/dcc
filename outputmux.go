@@ -12,6 +12,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -91,10 +92,10 @@ func (om *OutputMux) run() {
 			return
 
 		case msg := <-om.mux:
-			if _, ok := buffers[msg.source]; !ok {
-				buffers[msg.source] = make([]string, 0)
-			}
 			if msg.text != "" {
+				if _, ok := buffers[msg.source]; !ok {
+					buffers[msg.source] = make([]string, 0)
+				}
 				buffers[msg.source] = append(buffers[msg.source], msg.text)
 			}
 			if msg.eof {
@@ -110,7 +111,7 @@ func (om *OutputMux) run() {
 func (om *OutputMux) NewWriter() *os.File {
 	r, w, err := os.Pipe()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	go func(r io.Reader) {
 		in := bufio.NewScanner(r)
