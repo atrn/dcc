@@ -188,6 +188,8 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 		return badstat(target, err)
 	case FileIsNewer(sourceInfo, targetInfo):
 		return outOfDate("source newer than target")
+	case options.ModTime().After(targetInfo.ModTime()):
+		return outOfDate("compiler options file newer than target")
 	case FileIsNewer(options.FileInfo(), targetInfo):
 		return outOfDate("compiler options file newer than target")
 	}

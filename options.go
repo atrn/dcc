@@ -65,6 +65,10 @@ func (o *Options) SetModTime(t time.Time) {
 	o.mtime = t
 }
 
+func (o *Options) ModTime() time.Time {
+	return o.mtime
+}
+
 // SetFrom copies options from another Options leaving
 // the receiver's Path unmodified.
 //
@@ -99,7 +103,11 @@ func (o *Options) FindFile(s string) int {
 // read for some reason.
 //
 func (o *Options) ReadFromFile(filename string, filter func(string) string) (bool, error) {
+	ofilename := filename
 	filename, _ = FindFile(filename, PlatformSpecific)
+	if Debug {
+		log.Printf("DEBUG: Options.ReadFromFile %q -> actual path %q", ofilename, filename)
+	}
 	if filter == nil {
 		filter = func(s string) string { return s }
 	}
@@ -135,6 +143,12 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 		}
 		fields := strings.Fields(line)
 		for _, field := range fields {
+			if field[0] == '$' {
+				field = os.Getenv(field[1:])
+				if field == "" {
+					continue
+				}
+			}
 			if field = filter(field); field != "" {
 				o.Values = append(o.Values, field)
 			}
@@ -143,16 +157,49 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	return true, nil
 }
 
+func undelim(s string, start, end byte) string {
+	switch n := len(s) - 1; {
+	case n < 1:
+		return s
+	case s[0] != start:
+		return s
+	case s[n] != end:
+		return s
+	default:
+	    return s[1:n]
+	}
+}
+
+func extractFilename(filename string) string {
+	if len(filename) < 2 {
+		return filename
+	}
+	if filename[0] == '"' {
+		return undelim(filename, '"', '"')
+	}
+	if filename[0] == '<' {
+		return undelim(filename, '<', '>')
+	}
+	return filename
+}
+
 func getFilename(why, line, filename string) (string, error) {
+	malformed := func() (string, error) {
+		return "", fmt.Errorf("%q - malformed '%s' line", why, line)
+	}
+	dir := filepath.Dir(filename)
 	filename = filepath.Base(filename) // CXXFLAGS, CFLAGS, etc...
 	fields := strings.Fields(line)
 	switch numFields := len(fields); {
-	case numFields == 1:
-		return filename, nil
 	case numFields == 2:
-		return fields[1], nil
+		return filepath.Join(dir, extractFilename(fields[1])), nil
+	case numFields == 1:
+		if why == "#inherit" {
+			return filename, nil
+		}
+		return malformed()
 	default:
-		return "", fmt.Errorf("%q - malformed '%s' line", why, line)
+		return malformed()
 	}
 }
 
@@ -160,6 +207,9 @@ func (o *Options) includeFile(line string, filename string, filter func(string) 
 	path, err := getFilename("#include", line, filename)
 	if err != nil {
 		return err
+	}
+	if Debug {
+		log.Printf("DEBUG: %q include -> %q", filename, path)
 	}
 	_, err = o.ReadFromFile(path, filter)
 	return err
