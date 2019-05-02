@@ -38,6 +38,12 @@ func (o *Options) FileInfo() os.FileInfo {
 	return o.fileinfo
 }
 
+// Len returns the number of values defined by the receiver.
+//
+func (o *Options) Len() int {
+	return len(o.Values)
+}
+
 // Empty returns true if the Options has no values
 //
 func (o *Options) Empty() bool {
@@ -106,7 +112,7 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	ofilename := filename
 	filename, _ = FindFile(filename, PlatformSpecific)
 	if Debug {
-		log.Printf("DEBUG: Options.ReadFromFile %q -> actual path %q", ofilename, filename)
+		log.Printf("OPTIONS: %q -> actual %q", ofilename, filename)
 	}
 	if filter == nil {
 		filter = func(s string) string { return s }
@@ -166,7 +172,7 @@ func undelim(s string, start, end byte) string {
 	case s[n] != end:
 		return s
 	default:
-	    return s[1:n]
+		return s[1:n]
 	}
 }
 

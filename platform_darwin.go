@@ -65,10 +65,11 @@ func MacosCreateLibrary(filename string, objectFiles []string) error {
 // MacosCreateDLL creates a dynamic library using the MacOS libtool
 // program passing it the -dynamic option.
 //
-func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string) error {
+func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
 	args := []string{"-dynamic", "-o", filename}
 	args = append(args, linkerOptions...)
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)
+	args = append(args, frameworks...)
 	return libtool(args)
 }

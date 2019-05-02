@@ -32,7 +32,7 @@ func ElfCreateLibrary(filename string, objectFiles []string) error {
 // ElfCreateDLL creates a dynamic library using the compiler, passing
 // a -shared option.
 //
-func ElfCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string) error {
+func ElfCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
 	args := []string{"-shared", "-o", filename}
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)

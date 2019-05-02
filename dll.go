@@ -21,7 +21,7 @@ import (
 func Dll(target string, inputs []string, libs *Options, options *Options, otherFiles *Options, frameworks []string) error {
 	createDll := func() error {
 		inputs = append(inputs, otherFiles.Values...)
-		return platform.CreateDLL(target, inputs, libs.Values, options.Values)
+		return platform.CreateDLL(target, inputs, libs.Values, options.Values, frameworks)
 	}
 	if IgnoreDependencies {
 		return createDll()
