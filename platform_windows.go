@@ -37,7 +37,7 @@ func WindowsCreateLibrary(filename string, objectFiles []string) error {
 // WindowsCreateDLL creates a dynamic library from the supplied object files
 // and library files using Microsoft's LINK.EXE.
 //
-func WindowsCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string) error {
+func WindowsCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
 	args := append([]string{"/DLL", "/OUT:" + filename}, objectFiles...)
 	args = append(args, linkerOptions...)
 	args = append(args, libraryFiles...)

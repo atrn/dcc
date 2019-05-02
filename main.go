@@ -220,8 +220,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = ReadLibs(LIBSFile, libraryFiles, libraryDirs, frameworks); err != nil {
+	if err = ReadLibs(LIBSFile, libraryFiles, &libraryDirs, &frameworks); err != nil {
 		log.Fatal(err)
+	}
+	if Debug {
+		log.Printf("LIBS: %d libraries, %d dirs, %d frameworks", libraryFiles.Len(), len(libraryDirs), len(frameworks))
+		log.Println("LIBS:", libraryFiles.String())
+		log.Printf("LIBS: paths %v", libraryDirs)
+		log.Printf("LIBS: frameworks %v", frameworks)
 	}
 
 	// Helper to set our running mode and set it once.
@@ -712,25 +718,28 @@ func CatchPanics() {
 
 // ReadLibs reads a "LIBS" file
 //
-func ReadLibs(libsFile string, libraryFiles *Options, libraryDirs []string, frameworks []string) error {
+func ReadLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, frameworks *[]string) error {
 	captureNext := false
 	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, libsFile), func(s string) string {
+		if Debug {
+			log.Printf("LIBS: filter %q", s)
+		}
 		if captureNext {
-			frameworks = append(frameworks, s)
+			*frameworks = append(*frameworks, s)
 			captureNext = false
 			return ""
 		}
 		if s == "-framework" {
-			frameworks = append(frameworks, s)
+			*frameworks = append(*frameworks, s)
 			captureNext = true
 			return ""
 		}
 		if strings.HasPrefix(s, "-L") {
-			libraryDirs = append(libraryDirs, s[2:])
+			*libraryDirs = append(*libraryDirs, s[2:])
 			return ""
 		}
 		if strings.HasPrefix(s, "-l") {
-			if path, _, found, err := FindLib(libraryDirs, s[2:]); err != nil {
+			if path, _, found, err := FindLib(*libraryDirs, s[2:]); err != nil {
 				log.Fatal(err) // FIXME - don't fatal here
 			} else if found {
 				return path
