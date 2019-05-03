@@ -220,7 +220,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = ReadLibs(LIBSFile, libraryFiles, &libraryDirs, &frameworks); err != nil {
+	if err = readLibs(LIBSFile, libraryFiles, &libraryDirs, &frameworks); err != nil {
 		log.Fatal(err)
 	}
 	if Debug {
@@ -716,26 +716,37 @@ func CatchPanics() {
 	}
 }
 
-// ReadLibs reads a "LIBS" file
-//
-func ReadLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, frameworks *[]string) error {
+func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, frameworks *[]string) error {
 	captureNext := false
+	prevs := ""
 	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, libsFile), func(s string) string {
 		if Debug {
 			log.Printf("LIBS: filter %q", s)
 		}
 		if captureNext {
-			*frameworks = append(*frameworks, s)
+			if prevs == "-L" {
+				*libraryDirs = append(*libraryDirs, s)
+			} else {
+				*frameworks = append(*frameworks, s)
+			}
 			captureNext = false
+			prevs = s
 			return ""
 		}
 		if s == "-framework" {
 			*frameworks = append(*frameworks, s)
 			captureNext = true
+			prevs = s
+			return ""
+		}
+		if s == "-L" {
+			captureNext = true
+			prevs = s
 			return ""
 		}
 		if strings.HasPrefix(s, "-L") {
 			*libraryDirs = append(*libraryDirs, s[2:])
+			prevs = s
 			return ""
 		}
 		if strings.HasPrefix(s, "-l") {
@@ -744,6 +755,7 @@ func ReadLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 			} else if found {
 				return path
 			}
+			prevs = s
 		}
 		return s
 	})
