@@ -43,24 +43,32 @@ var (
 	ActualCompiler Compiler
 
 	// NumJobs is the number of concurrent compilations dcc will
-	// perform. By default this is the number of available CPUs.
+	// perform. By default this is the number of available CPUs
+	// plus 2. Why 2? Well basically because that's what ninja does.
+	// The old rule-of-thumb used to be 1+NCPU but we do more I/O
+	// in our builds these days (C++ especially) so there's more
+	// I/O to overlap.
 	//
 	NumJobs int
 
 	// DccDir is the name of the directory where dcc-related files
 	// are stored. If this directory does not exist the current
-	// is used in its place.
+	// is used in its place. This defaults to ".dcc" and lets users
+	// "hide" the various build files by simply putting them in that
+	// directory making for cleaner source directories.
 	//
 	DccDir string
 
 	// DepsDir is the name of the directory where the per-object
-	// file dependency files (.d files) are stored.
+	// file dependency files (.d files) are stored. This is usually
+	// ".dcc.d" except on windows.
 	//
 	DepsDir string
 
 	// ObjsDir is the name of the directory where object files
 	// are written. It is usually a relative path, relative to
 	// the source file.
+	//
 	ObjsDir string
 
 	// Quiet disables most messages when true. Usually dcc will
@@ -68,11 +76,11 @@ var (
 	//
 	Quiet = false
 
-	// Verbose enables messages when true.
+	// Verbose, when true, enables various messages from dcc.
 	//
 	Verbose = false
 
-	// Debug enables debug output when true.
+	// Debug, when true, enables debug output.
 	//
 	Debug = false
 )
@@ -96,12 +104,18 @@ func main() {
 		defer CatchPanics()
 	}
 
-	CCFile := Getenv("CCFILE", "CC")
-	CXXFile := Getenv("CXXFILE", "CXX")
-	CFLAGSFile := Getenv("CFLAGSFILE", "CFLAGS")
-	CXXFLAGSFile := Getenv("CXXFLAGSFILE", "CXXFLAGS")
-	LDFLAGSFile := Getenv("LDFLAGSFILE", "LDFLAGS")
-	LIBSFile := Getenv("LIBSFILE", "LIBS")
+	// The names of the files read to obtain options for compiling
+	// and linking.  These can be overriden via the environment
+	// and undergo platform-specific file selection, e.g. using
+	// CFLAGS.linux in preference to CFLAGS on a Linux system.
+	//
+	CCFILE := Getenv("CCFILE", "CC")
+	CXXFILE := Getenv("CXXFILE", "CXX")
+	CFLAGSFILE := Getenv("CFLAGSFILE", "CFLAGS")
+	CXXFLAGSFILE := Getenv("CXXFLAGSFILE", "CXXFLAGS")
+	LDFLAGSFILE := Getenv("LDFLAGSFILE", "LDFLAGS")
+	LIBSFILE := Getenv("LIBSFILE", "LIBS")
+
 	DccDir = Getenv("DCCDIR", ".dcc")
 	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir)
 	ObjsDir = Getenv("OBJDIR", ".")
@@ -119,15 +133,15 @@ func main() {
 	dasho := ""
 	dashm := ""
 
-	cCompiler := makeCompilerOption(CCFile, platform.DefaultCC)
-	cppCompiler := makeCompilerOption(CXXFile, platform.DefaultCXX)
+	cCompiler := makeCompilerOption(CCFILE, platform.DefaultCC)
+	cppCompiler := makeCompilerOption(CXXFILE, platform.DefaultCXX)
 
 	// We assume we're compiling C and define a function to switch
 	// things to C++. Which we check for next.
 	//
-	underlyingCompiler, optionsFilename := cCompiler, CFLAGSFile
+	underlyingCompiler, optionsFilename := cCompiler, CFLAGSFILE
 	cplusplus := func() {
-		underlyingCompiler, optionsFilename = cppCompiler, CXXFLAGSFile
+		underlyingCompiler, optionsFilename = cppCompiler, CXXFLAGSFILE
 	}
 
 	// Rules for deciding if we're need to compile with C++:
@@ -202,7 +216,7 @@ func main() {
 
 	// Now we do the same for the linker options. We use the "LDFLAGS" file.
 	//
-	_, err = linkerOptions.ReadFromFile(filepath.Join(DccDir, LDFLAGSFile), func(s string) string {
+	_, err = linkerOptions.ReadFromFile(filepath.Join(DccDir, LDFLAGSFILE), func(s string) string {
 		// Collect directories named via -L in libraryDirs
 		if strings.HasPrefix(s, "-L") {
 			libraryDirs = append(libraryDirs, s[2:])
@@ -220,7 +234,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = readLibs(LIBSFile, libraryFiles, &libraryDirs, &frameworks); err != nil {
+	if err = readLibs(LIBSFILE, libraryFiles, &libraryDirs, &frameworks); err != nil {
 		log.Fatal(err)
 	}
 	if Debug {
