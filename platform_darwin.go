@@ -66,8 +66,25 @@ func MacosCreateLibrary(filename string, objectFiles []string) error {
 // program passing it the -dynamic option.
 //
 func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
+	// The LDFLAGS and LIBS options files are shared between the compiler
+	// and libtool.  However libtool doesn't support the compiler's -Wl
+	// mechanism for passing options to the actual linker so we strip
+	// any such prefix from options we send to libtool.
+	//
+	removeWl := func(args []string) (r []string) {
+		const dashWl = "-Wl,"
+		for _, arg := range args {
+			if strings.HasPrefix(arg, dashWl) {
+				r = append(r, strings.TrimPrefix(arg, dashWl))
+			} else {
+				r = append(r, arg)
+			}
+		}
+		return
+	}
+
 	args := []string{"-dynamic", "-o", filename}
-	args = append(args, linkerOptions...)
+	args = append(args, removeWl(linkerOptions)...)
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)
 	args = append(args, frameworks...)
