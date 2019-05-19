@@ -43,11 +43,13 @@ var (
 	ActualCompiler Compiler
 
 	// NumJobs is the number of concurrent compilations dcc will
-	// perform. By default this is the number of available CPUs
-	// plus 2. Why 2? Well basically because that's what ninja does.
+	// perform. By default this is two times the number of CPUs.
+	// Why? Well basically because that's what works well for me.
 	// The old rule-of-thumb used to be 1+NCPU but we do more I/O
 	// in our builds these days (C++ especially) so there's more
-	// I/O to overlap.
+	// I/O to overlap. Ninja uses 2+NCPU by default and dcc
+	// used to do that but 2*NCPU works better for what I build
+	// on my machines (not so modern C++, SSDs, 4/8 cores).
 	//
 	NumJobs int
 
@@ -119,7 +121,7 @@ func main() {
 	DccDir = Getenv("DCCDIR", ".dcc")
 	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir)
 	ObjsDir = Getenv("OBJDIR", ".")
-	NumJobs = GetenvInt("JOBS", 2+runtime.NumCPU())
+	NumJobs = GetenvInt("JOBS", 2*runtime.NumCPU())
 
 	_, err := Stat(DccDir)
 	if os.IsNotExist(err) {
