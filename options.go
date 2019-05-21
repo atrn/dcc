@@ -64,6 +64,13 @@ func (o *Options) Append(option string) {
 	o.Values = append(o.Values, option)
 }
 
+// Prepend inserts an option at the start of the set of options.
+// Note, Prepend does NOT modify the mtime of the receiver.
+//
+func (o *Options) Prepend(option string) {
+	o.Values = append([]string{option}, o.Values...)
+}
+
 // SetModTime sets the receiver's modification time to the supplied
 // value.
 //

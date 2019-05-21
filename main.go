@@ -414,7 +414,7 @@ func main() {
 			libraryDirs = append(libraryDirs, arg[2:])
 
 		case strings.HasPrefix(arg, "-l"):
-			libraryFiles.Append(arg)
+			libraryFiles.Prepend(arg)
 
 		case arg == "-c":
 			setMode(arg, CompileSourceFiles)
