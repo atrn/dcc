@@ -49,6 +49,7 @@ func FindFileFromDirectory(filename, dir string, f func(string) string) (string,
 // FindFileOnPath finds a file along a search path.
 //
 func FindFileOnPath(paths []string, filename string, f func(string) string) (string, os.FileInfo, bool, error) {
+
 	for _, dir := range paths {
 		path := filepath.Join(dir, filename)
 		if f != nil {
@@ -58,7 +59,17 @@ func FindFileOnPath(paths []string, filename string, f func(string) string) (str
 			return path, info, true, nil
 		} else if !os.IsNotExist(err) {
 			return "", nil, false, err
-		} // else, ignore non-existent file
+		}
+
+		path = filepath.Join(dir, DccDir, filename)
+		if f != nil {
+			path = f(path)
+		}
+		if info, err := Stat(path); err == nil {
+			return path, info, true, nil
+		} else if !os.IsNotExist(err) {
+			return "", nil, false, err
+		}
 	}
 	return "", nil, false, nil
 }
