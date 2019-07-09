@@ -69,15 +69,23 @@ func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string
 	// The LDFLAGS and LIBS options files are shared between the compiler
 	// and libtool.  However libtool doesn't support the compiler's -Wl
 	// mechanism for passing options to the actual linker so we strip
-	// any such prefix from options we send to libtool.
+	// any such prefix from options we send to libtool. libtool also
+	// doesn't understand -rpath and its argument.
 	//
 	removeWl := func(args []string) (r []string) {
 		const dashWl = "-Wl,"
+		skipNext := false
 		for _, arg := range args {
-			if strings.HasPrefix(arg, dashWl) {
-				r = append(r, strings.TrimPrefix(arg, dashWl))
+			if skipNext {
+				skipNext = false
 			} else {
-				r = append(r, arg)
+				if strings.HasPrefix(arg, "-Wl,-rpath") {
+					skipNext = true
+				} else if strings.HasPrefix(arg, dashWl) {
+					r = append(r, strings.TrimPrefix(arg, dashWl))
+				} else {
+					r = append(r, arg)
+				}
 			}
 		}
 		return
