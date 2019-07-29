@@ -34,6 +34,7 @@ func ElfCreateLibrary(filename string, objectFiles []string) error {
 //
 func ElfCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
 	args := []string{"-shared", "-o", filename}
+	args = append(args, linkerOptions...)
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)
 	if Verbose {
