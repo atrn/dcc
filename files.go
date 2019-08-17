@@ -61,6 +61,21 @@ func FileIsNewer(a os.FileInfo, b os.FileInfo) bool {
 // ObjectFilename returns the name of the object file for a given source file.
 //
 func ObjectFilename(path string, d string) string {
+	dd, bb := filepath.Dir(path), filepath.Base(path)
+	parts := strings.Split(dd, "/")
+	first, n := 0, len(parts)
+	if n > 0 {
+		for first < n && parts[first] == ".." {
+			first++
+		}
+		if first > 0 {
+			if first == n {
+				path = filepath.Join(".", bb)
+			} else {
+				path = filepath.Join(strings.Join(parts[first:], "/"), bb)
+			}
+		}
+	}
 	if IsSourceFile(path) {
 		stem := strings.TrimSuffix(path, filepath.Ext(path))
 		return filepath.Clean(filepath.Join(d, stem+platform.ObjectFileSuffix))

@@ -14,16 +14,28 @@ import (
 	"path/filepath"
 )
 
+const DebugFind = false // enable for verbose debug output
+
 // FindFile returns a path for a filename and a flag
 // indicating if the file was actually found.
 //
 func FindFile(filename string, f func(string) string) (string, bool) {
+	ofilename := filename
+	if DebugFind {
+		log.Printf("DEBUG FIND: FindFile %q", ofilename)
+	}
 	path, _, exists, err := FindFileFromCwd(filename, f)
 	if err == nil && exists {
+		if DebugFind {
+			log.Printf("DEBUG FIND: FindFile %q -> %q", filename, path)
+		}
 		return path, true
 	}
 	if err != nil {
 		log.Print(err)
+	}
+	if DebugFind {
+		log.Printf("DEBUG FIND: FindFile %q -> %q", filename, filename)
 	}
 	return filename, false
 }
@@ -31,12 +43,18 @@ func FindFile(filename string, f func(string) string) (string, bool) {
 // FindFileFromCwd finds a file starting from the current directory and searching towards the root.
 //
 func FindFileFromCwd(filename string, f func(string) string) (string, os.FileInfo, bool, error) {
+	if DebugFind {
+		log.Printf("DEBUG FIND: FindFileFromCwd %q", filename)
+	}
 	return FindFileFromDirectory(filename, CurrentDirectory, f)
 }
 
 // FindFileFromDirectory finds a file starting from the specified directory, search towards the root.
 //
 func FindFileFromDirectory(filename, dir string, f func(string) string) (string, os.FileInfo, bool, error) {
+	if DebugFind {
+		log.Printf("DEBUG FIND: FindFileFromDirectory %q %q", filename, dir)
+	}
 	const root = string(filepath.Separator)
 	paths := []string{dir}
 	for dir != root {
@@ -49,28 +67,44 @@ func FindFileFromDirectory(filename, dir string, f func(string) string) (string,
 // FindFileOnPath finds a file along a search path.
 //
 func FindFileOnPath(paths []string, filename string, f func(string) string) (string, os.FileInfo, bool, error) {
-
+	logit := func(format string, args ...interface{}) {
+		if DebugFind {
+			log.Printf("DEBUG FIND: "+format, args...)
+		}
+	}
+	logit("FIND: FindFileOnPath %q %q", paths, filename)
 	for _, dir := range paths {
 		path := filepath.Join(dir, filename)
+		logit("trying %q", path)
 		if f != nil {
-			path = f(path)
+			newpath := f(path)
+			logit("filter transformed %q -> %q", path, newpath)
+			path = newpath
 		}
 		if info, err := Stat(path); err == nil {
+			logit("returning %q", path)
 			return path, info, true, nil
 		} else if !os.IsNotExist(err) {
+			logit("%s", err.Error())
 			return "", nil, false, err
 		}
 
-		path = filepath.Join(dir, DccDir, filename)
+		path = filepath.Join(dir, ".dcc", filename)
+		logit("now trying %q", path)
 		if f != nil {
-			path = f(path)
+			newpath := f(path)
+			logit("filter transformed %q -> %q", path, newpath)
+			path = newpath
 		}
 		if info, err := Stat(path); err == nil {
+			logit("returning %q", path)
 			return path, info, true, nil
 		} else if !os.IsNotExist(err) {
+			logit("%s", err.Error())
 			return "", nil, false, err
 		}
 	}
+	logit("no match")
 	return "", nil, false, nil
 }
 
