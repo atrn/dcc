@@ -19,6 +19,12 @@ import (
 	"strings"
 )
 
+const (
+	// The default "hidden" directory where options files reside.
+	//
+	DefaultDccDir = ".dcc"
+)
+
 var (
 	// Myname is the program's invocation name. We use it to
 	// prefix log messages and check it to see if we should
@@ -55,9 +61,9 @@ var (
 
 	// DccDir is the name of the directory where dcc-related files
 	// are stored. If this directory does not exist the current
-	// is used in its place. This defaults to ".dcc" and lets users
-	// "hide" the various build files by simply putting them in that
-	// directory making for cleaner source directories.
+	// directory is used. DccDir defaults to ".dcc" allowing users
+	// to "hide" the various build files by putting them in a "dot"
+	// directory (which makes for cleaner source directories).
 	//
 	DccDir string
 
@@ -118,10 +124,10 @@ func main() {
 	LDFLAGSFILE := Getenv("LDFLAGSFILE", "LDFLAGS")
 	LIBSFILE := Getenv("LIBSFILE", "LIBS")
 
-	DccDir = Getenv("DCCDIR", ".dcc")
-	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir)
-	ObjsDir = Getenv("OBJDIR", ".")
-	NumJobs = GetenvInt("JOBS", 2*runtime.NumCPU())
+	DccDir = Getenv("DCCDIR", DefaultDccDir)             // TODO: must be a relative path
+	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir) // TODO: must be a relative path
+	ObjsDir = Getenv("OBJDIR", ".")                      // TODO: must be a relative path
+	NumJobs = GetenvInt("JOBS", 2+runtime.NumCPU())      // same default as ninja
 
 	_, err := Stat(DccDir)
 	if os.IsNotExist(err) {

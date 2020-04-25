@@ -1,13 +1,13 @@
 # dcc - a dependency-driven C/C++ compiler driver
 
-`dcc` is a C/C++ compiler driver _wrapper_ that that adds, parallel,
-_dependency-based_ building to the underlying C or C++ compiler (which
-means `gcc`, `clang`, or `icc`).
+`dcc` is a C/C++ compiler driver (_wrapper_) that that adds, parallel,
+_dependency-based_ building to an underlying C or C++ compiler (`gcc`,
+`clang`, and `icc` have been used sucessfully).
 
 `dcc` uses compiler generated dependency information, along with
-hard-coded `make`-like rules, to let it determine if compilation, or
-linking, is actually required. This allows it to avoid doing work, if
-possible. As with a typical `make`-based builds `dcc` only
+hard-coded `make`-like rules, to determine if compilation or linking
+is actually required. This allows dcc to avoid running commands if
+they are not required. As with a typical make-based builds `dcc` only
 re-compiles, or re-links, when an output file is out-of-date with
 respect to its inputs, or dependencies. However, unlike make-based
 builds the user doesn't have to do anything to get this behaviour.

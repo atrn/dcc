@@ -9,6 +9,7 @@
 package main
 
 import (
+	"log"
 	"runtime"
 )
 
@@ -53,6 +54,9 @@ func (p *Platform) DynamicLibrary(name string) string {
 //
 func PlatformSpecific(path string) string {
 	try := func(path string) (string, bool) {
+		if DebugFind {
+			log.Printf("DEBUG FIND: Trying %q", path)
+		}
 		_, err := Stat(path)
 		return path, err == nil
 	}

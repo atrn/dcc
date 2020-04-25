@@ -1,21 +1,14 @@
 # TODO
 
-## detect overriden headers
+## Detect Overriden Headers
 
-If a new header file, say `stdio.h`, is added to a directory on the
-include file search path such that the code being built _would_ now
-include that file, we should re-build.
+The issue:
 
-This particular situation is not common however it is possible.  Some
-build enviromnents can be _messy_ and update or places things in odd
-ways - MacOS, Windows and, unfortunately, some Linux-based systems
-can update/install things underneath the user which can make this
-happen.
-
-Better safe than sorry.
-
-Without compiler support (telling us which files were *not* included)
-we have to figure that our ourselves.
+If a new header file is added with the same name as a header already
+included by some source file, say a new `stdio.h`, we should rebuild
+as the re-compilation will be use the new header. This means we need
+to be able to detect that by emulating the compiler's search for
+included files to determine if this has occurred.
 
 ## `cl.exe`
 
@@ -30,7 +23,23 @@ do what we need. With `cl.exe` we have to _scrape_ the output produced
 by the `/showIncludes` option to obtain the names of dependent files.
 I haven't implemented that as yet.
 
-## improved `.dcc` directory support
+## Cleanup Options File Searching
 
-Options file searching doesn't work as expected when a `.dcc`
-directory is used.
+Options file searching doesn't work properly when using a `.dcc`
+directory and platform-specific options files.  The current
+implementation is a bit of a mess (hacked) and could do with
+a re-work.
+
+## Linux-based OS Library Searching
+
+Linux distributions like to use all manner of directories
+to hold libraries and compiler-version dependent libraries
+so the current hard-coded paths are (a) not sufficient and
+(b) incorrect.
+
+The real fix is to either obtain the paths from the compiler
+(e.g. gcc's _specs_) or detect the compiler version and update
+the various paths using compiler-dependent knowledge.  It also
+doesn't really help that different distributions and package
+management tools use different directory layouts and multilib
+builds just add to the fun.

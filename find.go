@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-const DebugFind = false // enable for verbose debug output
+var DebugFind = false // enable for verbose debug output
 
 // FindFile returns a path for a filename and a flag
 // indicating if the file was actually found.
@@ -72,13 +72,13 @@ func FindFileOnPath(paths []string, filename string, f func(string) string) (str
 			log.Printf("DEBUG FIND: "+format, args...)
 		}
 	}
-	logit("FIND: FindFileOnPath %q %q", paths, filename)
+	logit("FindFileOnPath %q %q", paths, filename)
 	for _, dir := range paths {
 		path := filepath.Join(dir, filename)
 		logit("trying %q", path)
 		if f != nil {
 			newpath := f(path)
-			logit("filter transformed %q -> %q", path, newpath)
+			logit("transformed %q -> %q", path, newpath)
 			path = newpath
 		}
 		if info, err := Stat(path); err == nil {
@@ -89,11 +89,11 @@ func FindFileOnPath(paths []string, filename string, f func(string) string) (str
 			return "", nil, false, err
 		}
 
-		path = filepath.Join(dir, ".dcc", filename)
-		logit("now trying %q", path)
+		path = filepath.Join(dir, DefaultDccDir, filename)
+		logit("trying %q", path)
 		if f != nil {
 			newpath := f(path)
-			logit("filter transformed %q -> %q", path, newpath)
+			logit("transformed %q -> %q", path, newpath)
 			path = newpath
 		}
 		if info, err := Stat(path); err == nil {
@@ -104,7 +104,7 @@ func FindFileOnPath(paths []string, filename string, f func(string) string) (str
 			return "", nil, false, err
 		}
 	}
-	logit("no match")
+	logit("%q not found", filename)
 	return "", nil, false, nil
 }
 

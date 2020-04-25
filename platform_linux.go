@@ -55,7 +55,7 @@ func linuxSelectTarget(p *Platform, target string) error {
 var platform = Platform{
 	DefaultCC:         "cc",
 	DefaultCXX:        "c++",
-	DefaultDepsDir:    ".dcc.d",
+	DefaultDepsDir:    DefaultDccDir + ".d",
 	ObjectFileSuffix:  ".o",
 	DynamicLibPrefix:  "lib",
 	DynamicLibSuffix:  ".so",
