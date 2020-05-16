@@ -739,6 +739,7 @@ func CatchPanics() {
 }
 
 func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, frameworks *[]string) error {
+	var frameworkDirs []string
 	captureNext := false
 	prevs := ""
 	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, libsFile), func(s string) string {
@@ -748,6 +749,8 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 		if captureNext {
 			if prevs == "-L" {
 				*libraryDirs = append(*libraryDirs, s)
+			} else if prevs == "-F" {
+				frameworkDirs = append(frameworkDirs, s)
 			} else {
 				*frameworks = append(*frameworks, s)
 			}
@@ -761,13 +764,18 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 			prevs = s
 			return ""
 		}
-		if s == "-L" {
+		if s == "-L" || s == "-F" {
 			captureNext = true
 			prevs = s
 			return ""
 		}
 		if strings.HasPrefix(s, "-L") {
 			*libraryDirs = append(*libraryDirs, s[2:])
+			prevs = s
+			return ""
+		}
+		if strings.HasPrefix(s, "-F") {
+			frameworkDirs = append(frameworkDirs, s[2:])
 			prevs = s
 			return ""
 		}
@@ -781,6 +789,10 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 		}
 		return s
 	})
+	for index := range frameworkDirs {
+		frameworkDirs[index] = "-F" + frameworkDirs[index]
+	}
+	*frameworks = append(frameworkDirs, (*frameworks)...)
 	if err != nil && os.IsNotExist(err) {
 		err = nil
 	}
