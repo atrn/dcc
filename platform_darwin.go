@@ -35,7 +35,7 @@ func libtool(args []string) error {
 	const cmd = "libtool"
 	if !Quiet {
 		if Verbose {
-			fmt.Fprintln(os.Stderr, cmd, strings.Join(args, " "))
+			fmt.Fprintln(os.Stdout, cmd, strings.Join(args, " "))
 		} else if !Quiet {
 			filename := ""
 			nargs := len(args)
@@ -47,7 +47,7 @@ func libtool(args []string) error {
 					}
 				}
 			}
-			fmt.Fprintln(os.Stderr, cmd, filename)
+			fmt.Fprintln(os.Stdout, cmd, filename)
 		}
 	}
 	return Exec(cmd, args, os.Stderr)

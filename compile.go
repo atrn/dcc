@@ -143,7 +143,7 @@ func Compile(filename string, options *Options, ofile string, stderr io.WriteClo
 			displayed = append(displayed, ActualCompiler.Name())
 			displayed = append(displayed, filename)
 		}
-		fmt.Fprintln(os.Stderr, strings.Join(displayed, " "))
+		fmt.Fprintln(os.Stdout, strings.Join(displayed, " "))
 	}
 
 	return ActualCompiler.Compile(filename, ofile, depsFilename, options.Values, stderr)

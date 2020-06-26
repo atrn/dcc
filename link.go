@@ -33,9 +33,9 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		args = append(args, "-o", target)
 		if !Quiet {
 			if Verbose {
-				fmt.Fprintln(os.Stderr, ActualCompiler.Name(), strings.Join(args, " "))
+				fmt.Fprintln(os.Stdout, ActualCompiler.Name(), strings.Join(args, " "))
 			} else {
-				fmt.Fprintln(os.Stderr, "ld", target)
+				fmt.Fprintln(os.Stdout, "ld", target)
 			}
 		}
 		return Exec(ActualCompiler.Name(), args, os.Stderr)
@@ -101,7 +101,7 @@ func endash(values []string) (dashed []string) {
 			if t == s {
 				t = strings.TrimPrefix(s, platform.DynamicLibPrefix)
 			}
-			dashed = append(dashed, "-l" + t)
+			dashed = append(dashed, "-l"+t)
 		} else {
 			dashed = append(dashed, name)
 		}
