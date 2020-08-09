@@ -29,72 +29,46 @@ var platform = Platform{
 	CreateDLL:         MacosCreateDLL,
 }
 
-// Run libtool with the supplied arguments.
-//
-func libtool(args []string) error {
-	const cmd = "libtool"
-	if !Quiet {
-		if Verbose {
-			fmt.Fprintln(os.Stdout, cmd, strings.Join(args, " "))
-		} else if !Quiet {
-			filename := ""
-			nargs := len(args)
-			for index, arg := range args {
-				if arg == "-o" {
-					if index < nargs-1 {
-						filename = args[index+1]
-						break
-					}
-				}
-			}
-			fmt.Fprintln(os.Stdout, cmd, filename)
-		}
-	}
-	return Exec(cmd, args, os.Stderr)
-}
-
-// MacosCreateLibrary creates a static library using the MacOS libtool
-// program passing it the -static option.
-//
-func MacosCreateLibrary(filename string, objectFiles []string) error {
-	args := []string{"-static", "-o", filename}
-	args = append(args, objectFiles...)
-	return libtool(args)
-}
-
-// MacosCreateDLL creates a dynamic library using the MacOS libtool
-// program passing it the -dynamic option.
-//
-func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
-	// The LDFLAGS and LIBS options files are shared between the compiler
-	// and libtool.  However libtool doesn't support the compiler's -Wl
-	// mechanism for passing options to the actual linker so we strip
-	// any such prefix from options we send to libtool. libtool also
-	// doesn't understand -rpath and its argument.
-	//
-	removeWl := func(args []string) (r []string) {
-		const dashWl = "-Wl,"
-		skipNext := false
-		for _, arg := range args {
-			if skipNext {
-				skipNext = false
-			} else {
-				if strings.HasPrefix(arg, "-Wl,-rpath") {
-					skipNext = true
-				} else if strings.HasPrefix(arg, dashWl) {
-					r = append(r, strings.TrimPrefix(arg, dashWl))
-				} else {
-					r = append(r, arg)
-				}
-			}
-		}
+func logCommand(cmd string, args []string) {
+	if Quiet {
 		return
 	}
+	if Verbose {
+		fmt.Fprintln(os.Stdout, cmd, strings.Join(args, " "))
+		return
+	}
+	filename := ""
+	nargs := len(args)
+	for index, arg := range args {
+		if arg == "-o" {
+			if index < nargs-1 {
+				filename = args[index+1]
+				break
+			}
+		}
+	}
+	fmt.Fprintln(os.Stdout, cmd, filename)
+}
 
-	args := []string{"-dynamic", "-o", filename}
-	args = append(args, removeWl(linkerOptions)...)
+// MacosCreateLibrary creates a static library using libtool.
+//
+func MacosCreateLibrary(filename string, objectFiles []string) error {
+	const libtool = "libtool"
+	args := []string{"-static", "-o", filename}
+	args = append(args, objectFiles...)
+	logCommand(libtool, args)
+	return Exec(libtool, args, os.Stderr)
+}
+
+// MacosCreateDLL creates a dynamic library using the underlying
+// compiler and its -shared option.
+//
+func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
+	args := []string{"-shared", "-o", filename}
+	args = append(args, linkerOptions...)
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)
 	args = append(args, frameworks...)
-	return libtool(args)
+	logCommand(ActualCompiler.Name(), args)
+	return Exec(ActualCompiler.Name(), args, os.Stderr)
 }
