@@ -789,7 +789,7 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 		}
 		if strings.HasPrefix(s, "-l") {
 			if path, _, found, err := FindLib(*libraryDirs, s[2:]); err != nil {
-				log.Fatal(err) // FIXME - don't fatal here
+				log.Printf("warning: failed to find %s: %s", *libraryDirs, err)
 			} else if found {
 				return path
 			}
