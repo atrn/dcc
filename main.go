@@ -281,6 +281,14 @@ func main() {
 		}
 	}
 
+	// Helper to issue a warning message re. the -o option being set more
+	// that once and that we accept the first -o to set an output path
+	// and ignore subsequent ones.
+	//
+	warnOutputPathAlreadySet := func(ignoredPath string) {
+		log.Printf("warning: output pathname has already been set, ignoring this -o (%s)", ignoredPath)
+	}
+
 	// Windows is special... When using Microsoft's "cl.exe"
 	// as the underlying compiler, on Windows, we need to support
 	// its command line option syntax which allows for '/' as an
@@ -400,7 +408,7 @@ func main() {
 		case arg == "-o":
 			if i++; i < len(os.Args) {
 				if outputPathname != "" {
-					log.Print("warning: output pathname has already been set, ignoring -o")
+					warnOutputPathAlreadySet(outputPathname)
 				} else {
 					dasho = os.Args[i]
 				}
@@ -410,7 +418,7 @@ func main() {
 
 		case strings.HasPrefix(arg, "-o"):
 			if outputPathname != "" {
-				log.Print("warning: output pathname has already been set, ignoring -o")
+				warnOutputPathAlreadySet(outputPathname)
 			} else {
 				dasho = arg[2:]
 			}
@@ -764,18 +772,18 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 			prevs = s
 			return ""
 		}
-		if s == "-L" || s == "-F" {
+		if s == "-F" || s == "-L" {
 			captureNext = true
-			prevs = s
-			return ""
-		}
-		if strings.HasPrefix(s, "-L") {
-			*libraryDirs = append(*libraryDirs, s[2:])
 			prevs = s
 			return ""
 		}
 		if strings.HasPrefix(s, "-F") {
 			frameworkDirs = append(frameworkDirs, s[2:])
+			prevs = s
+			return ""
+		}
+		if strings.HasPrefix(s, "-L") {
+			*libraryDirs = append(*libraryDirs, s[2:])
 			prevs = s
 			return ""
 		}
