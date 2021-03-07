@@ -138,7 +138,7 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	o.fileinfo = info
 	input := bufio.NewScanner(file)
 	for input.Scan() {
-		line := strings.TrimSpace(input.Text())
+		line := os.ExpandEnv(strings.TrimSpace(input.Text()))
 		if strings.HasPrefix(line, "#include") {
 			if err := o.includeFile(line, filename, filter); err != nil {
 				return false, err
