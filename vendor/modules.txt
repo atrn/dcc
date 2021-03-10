@@ -1,0 +1,3 @@
+# github.com/atrn/par v0.0.0-20190419020652-f33d875d1159
+## explicit
+github.com/atrn/par
