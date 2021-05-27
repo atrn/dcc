@@ -139,21 +139,25 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 	input := bufio.NewScanner(file)
 	for input.Scan() {
 		line := os.ExpandEnv(strings.TrimSpace(input.Text()))
+
 		if strings.HasPrefix(line, "#include") {
 			if err := o.includeFile(line, filename, filter); err != nil {
 				return false, err
 			}
 			continue
 		}
+
 		if strings.HasPrefix(line, "#inherit") {
 			if err := o.inheritFile(line, filename, filter); err != nil {
 				return false, err
 			}
 			continue
 		}
+
 		if line == "" || line[0] == '#' {
 			continue
 		}
+
 		fields := strings.Fields(line)
 		for _, field := range fields {
 			if field[0] == '$' {
@@ -196,49 +200,51 @@ func extractFilename(filename string) string {
 	return filename
 }
 
-func getFilename(why, line, filename string) (string, error) {
+func getFilename(why, line, parentFilename string) (string, error) {
 	malformed := func() (string, error) {
 		return "", fmt.Errorf("%q - malformed '%s' line", why, line)
 	}
-	dir := filepath.Dir(filename)
-	filename = filepath.Base(filename) // CXXFLAGS, CFLAGS, etc...
+
+	dirname, basename := filepath.Split(parentFilename)
+
 	fields := strings.Fields(line)
-	switch numFields := len(fields); {
-	case numFields == 2:
-		return filepath.Join(dir, extractFilename(fields[1])), nil
-	case numFields == 1:
-		if why == "#inherit" {
-			return filename, nil
-		}
-		return malformed()
-	default:
-		return malformed()
+	numFields := len(fields)
+
+	if numFields == 2 {
+		return filepath.Join(dirname, extractFilename(fields[1])), nil
 	}
+
+	// #inherit with no parameter uses the same name as the parent file
+	if numFields == 1 && why == "#inherit" {
+		return basename, nil
+	}
+
+	return malformed()
 }
 
-func (o *Options) includeFile(line string, filename string, filter func(string) string) error {
-	path, err := getFilename("#include", line, filename)
+func (o *Options) includeFile(line string, parentFilename string, filter func(string) string) error {
+	path, err := getFilename("#include", line, parentFilename)
 	if err != nil {
 		return err
 	}
 	if Debug {
-		log.Printf("DEBUG: %q include -> %q", filename, path)
+		log.Printf("DEBUG: %q include -> %q", parentFilename, path)
 	}
 	_, err = o.ReadFromFile(path, filter)
 	return err
 }
 
-func (o *Options) inheritFile(line string, filename string, filter func(string) string) error {
-	inheritedFilename, err := getFilename("#inherit", line, filename)
+func (o *Options) inheritFile(line string, parentFilename string, filter func(string) string) error {
+	inheritedFilename, err := getFilename("#inherit", line, parentFilename)
 	if err != nil {
 		return err
 	}
 	if filepath.Dir(inheritedFilename) != "." {
-		return fmt.Errorf("%q: '#inherit' filename cannot contain path elements", inheritedFilename)
+		return fmt.Errorf("%q: the filename parameter to '#inherit' cannot contain path elements", inheritedFilename)
 	}
 	path, _, found, err := FindFileFromDirectory(
 		inheritedFilename,
-		filepath.Clean(filepath.Join(filepath.Dir(filename), "..")),
+		filepath.Clean(filepath.Join(filepath.Dir(parentFilename), "..")),
 		nil,
 	)
 	if err != nil {
@@ -249,7 +255,7 @@ func (o *Options) inheritFile(line string, filename string, filter func(string) 
 	}
 
 	if Debug {
-		log.Printf("DEBUG: %q #inherit -> %q", filename, path)
+		log.Printf("DEBUG: %q #inherit -> %q", parentFilename, path)
 	}
 
 	ok, err := o.ReadFromFile(path, filter)
@@ -265,9 +271,10 @@ func (o *Options) inheritFile(line string, filename string, filter func(string) 
 }
 
 //
-// MoreRecentOf returns the most recent modtime of two options.
+// MostRecentModTime returns the modification time of the most recently
+// modified of the two Options.
 //
-func MoreRecentOf(a *Options, b *Options) time.Time {
+func MostRecentModTime(a *Options, b *Options) time.Time {
 	if a.mtime.After(b.mtime) {
 		return a.mtime
 	}

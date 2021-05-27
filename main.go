@@ -220,7 +220,7 @@ func main() {
 	// that instead - automatic rebuilds when the compiler
 	// changes (v.unsafe - ref. Thompson's Reflections on Trust).
 	//
-	compilerOptions.SetModTime(MoreRecentOf(compilerOptions, underlyingCompiler))
+	compilerOptions.SetModTime(MostRecentModTime(compilerOptions, underlyingCompiler))
 
 	// Now we do the same for the linker options. We use the "LDFLAGS" file.
 	//

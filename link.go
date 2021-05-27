@@ -50,7 +50,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 	if err != nil {
 		return err
 	}
-	if MoreRecentOf(options, libs).After(targetInfo.ModTime()) {
+	if MostRecentModTime(options, libs).After(targetInfo.ModTime()) {
 		return link()
 	}
 	newestInput, err := NewestOf(inputs)

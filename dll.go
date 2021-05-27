@@ -33,7 +33,7 @@ func Dll(target string, inputs []string, libs *Options, options *Options, otherF
 	if err != nil {
 		return err
 	}
-	if MoreRecentOf(options, libs).After(targetInfo.ModTime()) {
+	if MostRecentModTime(options, libs).After(targetInfo.ModTime()) {
 		return createDll()
 	}
 	newestInput, err := NewestOf(inputs)
