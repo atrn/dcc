@@ -4,22 +4,31 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 )
 
 func runOneTestCase(cwd string, fn func() error) error {
-	opwd := MustGetwd()
+	ocwd := MustGetwd()
 	defer func() {
-		os.Chdir(opwd)
+		os.Chdir(ocwd)
+		CurrentDirectory = ocwd
 	}()
-	err := os.Chdir(cwd)
+	cwd, err := filepath.Abs(cwd)
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(cwd)
 	if err == nil {
+		CurrentDirectory = cwd
 		err = fn()
 	}
 	return err
 }
 
 func TestFind(t *testing.T) {
+	// DebugFind = true
+
 	removeTestData := func() {
 		err := os.RemoveAll("testdata")
 		if err != nil {
@@ -48,7 +57,6 @@ func TestFind(t *testing.T) {
 	}
 
 	err = runOneTestCase("testdata/root/child", func() error {
-		DebugFind = true
 		_, found := FindFile(filename, PlatformSpecific)
 		if !found {
 			t.Fatalf("%q not found", filename)
