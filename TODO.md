@@ -8,7 +8,7 @@ If a new header file is added with the same name as a header already
 included by some source file, say a new `stdio.h`, we should rebuild
 as the re-compilation will be use the new header. This means we need
 to be able to detect that by emulating the compiler's search for
-included files to determine if this has occurred.
+included files so we can determine if this has occurred.
 
 ## `cl.exe`
 
@@ -23,12 +23,25 @@ do what we need. With `cl.exe` we have to _scrape_ the output produced
 by the `/showIncludes` option to obtain the names of dependent files.
 I haven't implemented that as yet.
 
-## Cleanup Options File Searching
+## Re-work Options Files
 
-Options file searching doesn't work properly when using a `.dcc`
-directory and platform-specific options files.  The current
-implementation is a bit of a mess (hacked) and could do with
-a re-work.
+The current implementation is a bit of a mess (hacked) and could do
+with a re-work.
+
+### Conditionsls
+
+It would be good to have some sort of conditional processing to better
+accomodate different types of builds.  The use of separate files using
+the Go-style platform specific names works reasonably well for the
+platform granularity but doesn't work well for things like debug
+vs. release or shared object vs static library.
+
+Adding some directives that allow options files to contain
+conditional sections would likely solve the issue.
+
+### Searches
+
+The search for options files needs to obey POLA.
 
 ## Linux-based OS Library Searching
 
@@ -37,9 +50,5 @@ to hold libraries and compiler-version dependent libraries
 so the current hard-coded paths are (a) not sufficient and
 (b) incorrect.
 
-The real fix is to either obtain the paths from the compiler
-(e.g. gcc's _specs_) or detect the compiler version and update
-the various paths using compiler-dependent knowledge.  It also
-doesn't really help that different distributions and package
-management tools use different directory layouts and multilib
-builds just add to the fun.
+The real fix is to either obtain the paths from the compiler,
+e.g. via its "specs" file or the like.

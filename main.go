@@ -481,8 +481,7 @@ func main() {
 	// The cc(1) behaviour is:
 	//
 	// - without -c the -o's parameter names the executable
-	// - -c -o<path> names the object file but is only permitted
-	//   when compiling a single file
+	// - -c -o<path> names the object file but is only permitted when compiling a single file
 	//
 	// Dcc should add:
 	//

@@ -35,11 +35,11 @@ func Stat(path string) (os.FileInfo, error) {
 		return info, nil
 	}
 
-	//  We don't hold the mutex while calling os.Stat and this
-	//  introduces a race - multiple routines Stat'ing the same
-	//  path can overlap and do the same work - call os.Stat and
-	//  add the resultant info to the cache. Other than doing
-	//  things more than once this doesn't really matter.
+	// We don't hold the mutex while calling os.Stat and this
+	// introduces a race - multiple routines Stat'ing the same
+	// path can overlap and do the same work - call os.Stat and
+	// add the resultant info to the cache. Other than doing
+	// things more than once this doesn't really matter.
 	//
 	// Given the nature of the paths being Stat'd the FileInfo
 	// will be identical. The real effect of the race will be to
