@@ -351,6 +351,10 @@ func main() {
 		case arg == "--debug":
 			break // also handled above
 
+		case arg == "--version":
+			fmt.Print(versionNumber)
+			os.Exit(0)
+
 		case strings.HasPrefix(arg, "-j"):
 			if arg == "-j" {
 				NumJobs = runtime.NumCPU()
@@ -664,6 +668,7 @@ Options:
     --quiet         Disable non-error messages.
     --verbose       Show more output.
     --debug         Enable debug messages.
+    --version       Report dcc version and exit.
 
 With anything else is passed to the underlying compiler.
 
