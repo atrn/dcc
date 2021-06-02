@@ -11,6 +11,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -116,65 +117,137 @@ func (o *Options) FindFile(s string) int {
 // read for some reason.
 //
 func (o *Options) ReadFromFile(filename string, filter func(string) string) (bool, error) {
-	ofilename := filename
-	filename, _ = FindFile(filename, PlatformSpecific)
+	actualFilename, _ := FindFile(filename, PlatformSpecific)
 	if Debug {
-		log.Printf("OPTIONS: %q -> actual %q", ofilename, filename)
+		log.Printf("OPTIONS: %q -> actual filename %q", filename, actualFilename)
 	}
-	if filter == nil {
-		filter = func(s string) string { return s }
-	}
-	file, err := os.Open(filename)
+	file, err := os.Open(actualFilename)
 	if err != nil {
 		return false, err
 	}
 	defer file.Close()
-	o.Path = filename
+	o.Path = actualFilename
 	info, err := file.Stat()
 	if err != nil {
 		return true, err
 	}
 	o.mtime = info.ModTime()
 	o.fileinfo = info
-	input := bufio.NewScanner(file)
+	return o.ReadFromReader(file, filename, filter)
+}
+
+// Read options from the given io.Reader.
+//
+func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(string) string) (bool, error) {
+	if filter == nil {
+		filter = func(s string) string { return s }
+	}
+	var conditional Conditional
+	input := bufio.NewScanner(r)
+	lineNumber := 0
 	for input.Scan() {
-		line := os.ExpandEnv(strings.TrimSpace(input.Text()))
-
-		if strings.HasPrefix(line, "#include") {
-			if err := o.includeFile(line, filename, filter); err != nil {
-				return false, err
-			}
-			continue
-		}
-
-		if strings.HasPrefix(line, "#inherit") {
-			if err := o.inheritFile(line, filename, filter); err != nil {
-				return false, err
-			}
-			continue
-		}
-
-		if line == "" || line[0] == '#' {
-			continue
-		}
+		line := input.Text()
+		lineNumber++
 
 		fields := strings.Fields(line)
-		for _, field := range fields {
-			if field[0] == '$' {
-				field = os.Getenv(field[1:])
-				if field == "" {
-					continue
-				}
+		if len(fields) == 0 {
+			continue
+		}
+
+		evalCondition := func() error {
+			if len(fields) != 2 {
+				return reportErrorInFile(filename, lineNumber, fmt.Sprintf("%s requires a single parameter", fields[0]))
 			}
-			if field = filter(field); field != "" {
-				o.Values = append(o.Values, field)
+			val := os.Getenv(fields[1])
+			if val != "" {
+				conditional.PushState(TrueConditionState)
+			} else {
+				conditional.PushState(FalseConditionState)
+			}
+			return nil
+		}
+
+		if fields[0] == "#ifdef" {
+			if conditional.IsSkippingLines() {
+				conditional.PushState(conditional.CurrentState())
+			} else if err := evalCondition(); err != nil {
+				return false, err
+			} else {
+				continue
+			}
+		}
+
+		if fields[0] == "#ifndef" {
+			if conditional.IsSkippingLines() {
+				conditional.PushState(conditional.CurrentState())
+			} else if err := evalCondition(); err != nil {
+				return false, err
+			} else {
+				conditional.ToggleState()
+				continue
+			}
+		}
+
+		if fields[0] == "#else" {
+			if !conditional.IsActive() {
+				return false, reportErrorInFile(filename, lineNumber, ErrNoCondition.Error())
+			}
+			conditional.ToggleState()
+			continue
+		}
+
+		if fields[0] == "#endif" {
+			if !conditional.IsActive() {
+				return false, reportErrorInFile(filename, lineNumber, ErrNoCondition.Error())
+			}
+			if err := conditional.PopState(); err != nil {
+				return false, err
+			}
+			continue
+		}
+
+		if conditional.IsSkippingLines() {
+			continue
+		}
+
+		// #include <filename>
+		if fields[0] == "#include" {
+			if err := o.includeFile(filename, lineNumber, line, fields, filter); err != nil {
+				return false, err
+			}
+			continue
+		}
+
+		// #inherit
+		if fields[0] == "#inherit" {
+			if err := o.inheritFile(filename, lineNumber, line, fields, filter); err != nil {
+				return false, err
+			}
+			continue
+		}
+
+		// Any other line that starts with a '#' is a comment.
+		if line[0] == '#' {
+			continue
+		}
+
+		// Otherwise, treat fields (tokens) as options to be included.
+		// Expand (interpolate) any variable references, filter and
+		// collect any non-empty strings.
+		for _, field := range fields {
+			field = os.ExpandEnv(field)
+			fields2 := strings.Fields(field)
+			for _, field2 := range fields2 {
+				if field2 = filter(field2); field2 != "" {
+					o.Values = append(o.Values, field2)
+				}
 			}
 		}
 	}
 	return true, nil
 }
 
-func undelim(s string, start, end byte) string {
+func removeDelimiters(s string, start, end byte) string {
 	switch n := len(s) - 1; {
 	case n < 1:
 		return s
@@ -192,55 +265,43 @@ func extractFilename(filename string) string {
 		return filename
 	}
 	if filename[0] == '"' {
-		return undelim(filename, '"', '"')
+		return removeDelimiters(filename, '"', '"')
 	}
 	if filename[0] == '<' {
-		return undelim(filename, '<', '>')
+		return removeDelimiters(filename, '<', '>')
 	}
 	return filename
 }
 
-func getFilename(why, line, parentFilename string) (string, error) {
-	malformed := func() (string, error) {
-		return "", fmt.Errorf("%q - malformed '%s' line", why, line)
-	}
-
-	dirname, basename := filepath.Split(parentFilename)
-
-	fields := strings.Fields(line)
-	numFields := len(fields)
-
-	if numFields == 2 {
-		return filepath.Join(dirname, extractFilename(fields[1])), nil
-	}
-
-	// #inherit with no parameter uses the same name as the parent file
-	if numFields == 1 && why == "#inherit" {
-		return basename, nil
-	}
-
-	return malformed()
+func reportErrorInFile(filename string, lineNumber int, what string) error {
+	return fmt.Errorf("error: %s:%d %s", filename, lineNumber, what)
 }
 
-func (o *Options) includeFile(line string, parentFilename string, filter func(string) string) error {
-	path, err := getFilename("#include", line, parentFilename)
-	if err != nil {
-		return err
+func malformedLine(filename string, lineNumber int, what, line string) error {
+	return reportErrorInFile(filename, lineNumber, fmt.Sprintf("malformed %s - %s", what, line))
+}
+
+func (o *Options) includeFile(parentFilename string, lineNumber int, line string, fields []string, filter func(string) string) error {
+	if len(fields) != 2 {
+		return malformedLine(parentFilename, lineNumber, "#include", line)
 	}
+	name := extractFilename(fields[1])
+	path := filepath.Join(filepath.Dir(parentFilename), name)
 	if Debug {
 		log.Printf("DEBUG: %q include -> %q", parentFilename, path)
 	}
-	_, err = o.ReadFromFile(path, filter)
+	_, err := o.ReadFromFile(path, filter)
 	return err
 }
 
-func (o *Options) inheritFile(line string, parentFilename string, filter func(string) string) error {
-	inheritedFilename, err := getFilename("#inherit", line, parentFilename)
-	if err != nil {
-		return err
+func (o *Options) inheritFile(parentFilename string, lineNumber int, line string, fields []string, filter func(string) string) error {
+	if len(fields) != 1 {
+		return malformedLine(parentFilename, lineNumber, "#inherit", line)
 	}
+
+	inheritedFilename := filepath.Base(parentFilename)
 	if filepath.Dir(inheritedFilename) != "." {
-		return fmt.Errorf("%q: the filename parameter to '#inherit' cannot contain path elements", inheritedFilename)
+		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("filename parameter to '#inherit' cannot contain path elements %q", line))
 	}
 	path, _, found, err := FindFileFromDirectory(
 		inheritedFilename,
@@ -251,7 +312,7 @@ func (o *Options) inheritFile(line string, parentFilename string, filter func(st
 		return err
 	}
 	if !found {
-		return fmt.Errorf("%q: #inherited file not found", inheritedFilename)
+		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("#inherited file %q not found", inheritedFilename))
 	}
 
 	if Debug {
@@ -264,7 +325,7 @@ func (o *Options) inheritFile(line string, parentFilename string, filter func(st
 	}
 
 	if !ok {
-		return fmt.Errorf("%q: error reading file", path)
+		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("error reading inherited file %q", path))
 	}
 
 	return nil
