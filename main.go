@@ -141,6 +141,7 @@ func main() {
 	dasho := ""
 	dashm := ""
 	writeCompileCommands := false
+	appendCompileCommands := false
 
 	cCompiler := makeCompilerOption(CCFILE, platform.DefaultCC)
 	cppCompiler := makeCompilerOption(CXXFILE, platform.DefaultCXX)
@@ -339,6 +340,9 @@ func main() {
 
 		case arg == "--write-compile-commands":
 			writeCompileCommands = true
+
+		case arg == "--append-compile-commands":
+			appendCompileCommands = true
 
 		case arg == "--cpp":
 			break // ignore, handled above
@@ -591,7 +595,11 @@ func main() {
 	// Generate a compile_commands.json if requested.
 	//
 	if writeCompileCommands {
-		if err := WriteCompileCommands(sourceFilenames, compilerOptions, objdir); err != nil {
+		if err := WriteCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
+			log.Fatal(err)
+		}
+	} else if appendCompileCommands {
+		if err := AppendCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -683,6 +691,9 @@ Options:
     --version       Report dcc version and exit.
     --write-compile-commands
                     Output a compile_commands.json file.
+    --append-compile-commands
+                    Append to an existng compile_commands.json file
+		    if it exists.
 
 With anything else is passed to the underlying compiler.
 

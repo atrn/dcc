@@ -9,7 +9,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -205,32 +204,4 @@ func IsUptoDate(target string, deps []string, sourceInfo os.FileInfo, options *O
 		}
 	}
 	return result(true, nil, "target up to date")
-}
-
-func WriteCompileCommands(sourceFilenames []string, compilerOptions *Options, objdir string) error {
-	type CompileCommand struct {
-		Directory string `json:"directory"`
-		Command   string `json:"command"`
-		File      string `json:"file"`
-	}
-
-	commands := make([]CompileCommand, len(sourceFilenames))
-	for index, sourceFile := range sourceFilenames {
-		commands[index].Directory = CurrentDirectory
-		commands[index].Command = fmt.Sprintf("%s %s -o %s -c %s", ActualCompiler.Name(), compilerOptions.String(), ObjectFilename(sourceFile, objdir), sourceFile)
-		commands[index].File = sourceFile
-	}
-
-	filename := filepath.Join(objdir, "compile_commands.json")
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
-	err = enc.Encode(commands)
-	if err2 := file.Close(); err == nil {
-		err = err2
-	}
-	return err
 }
