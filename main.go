@@ -140,6 +140,7 @@ func main() {
 	outputPathname := ""
 	dasho := ""
 	dashm := ""
+	writeCompileCommands := false
 
 	cCompiler := makeCompilerOption(CCFILE, platform.DefaultCC)
 	cppCompiler := makeCompilerOption(CXXFILE, platform.DefaultCXX)
@@ -335,6 +336,9 @@ func main() {
 			// files to pass to the linker - classical cc(1) behaviour.
 			//
 			collectInputFile(arg)
+
+		case arg == "--write-compile-commands":
+			writeCompileCommands = true
 
 		case arg == "--cpp":
 			break // ignore, handled above
@@ -584,6 +588,14 @@ func main() {
 	//
 	ActualCompiler = GetCompiler(underlyingCompiler.String())
 
+	// Generate a compile_commands.json if requested.
+	//
+	if writeCompileCommands {
+		if err := WriteCompileCommands(sourceFilenames, compilerOptions, objdir); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// And now we're ready to compile everything.
 	//
 	if !CompileAll(sourceFilenames, compilerOptions, objdir) {
@@ -669,6 +681,8 @@ Options:
     --verbose       Show more output.
     --debug         Enable debug messages.
     --version       Report dcc version and exit.
+    --write-compile-commands
+                    Output a compile_commands.json file.
 
 With anything else is passed to the underlying compiler.
 
