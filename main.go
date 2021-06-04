@@ -594,12 +594,12 @@ func main() {
 
 	// Generate a compile_commands.json if requested.
 	//
-	if writeCompileCommands {
-		if err := WriteCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
+	if appendCompileCommands {
+		if err := AppendCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
 			log.Fatal(err)
 		}
-	} else if appendCompileCommands {
-		if err := AppendCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
+	} else if writeCompileCommands {
+		if err := WriteCompileCommandsDotJson(filepath.Join(objdir, CompileCommandsFilename), sourceFilenames, compilerOptions, objdir); err != nil {
 			log.Fatal(err)
 		}
 	}
