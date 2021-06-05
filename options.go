@@ -154,15 +154,19 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			continue
 		}
 
-		evalCondition := func() error {
+		evalCondition := func(invert bool) error {
 			if len(fields) != 2 {
 				return reportErrorInFile(filename, lineNumber, fmt.Sprintf("%s requires a single parameter", fields[0]))
 			}
 			val := os.Getenv(fields[1])
+			state1, state2 := TrueConditionState, FalseConditionState
+			if invert {
+				state1, state2 = FalseConditionState, TrueConditionState
+			}
 			if val != "" {
-				conditional.PushState(TrueConditionState)
+				conditional.PushState(state1)
 			} else {
-				conditional.PushState(FalseConditionState)
+				conditional.PushState(state2)
 			}
 			return nil
 		}
@@ -181,7 +185,7 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 		if fields[0] == "#ifdef" {
 			if conditional.IsSkippingLines() {
 				conditional.PushState(conditional.CurrentState())
-			} else if err := evalCondition(); err != nil {
+			} else if err := evalCondition(false); err != nil {
 				return false, err
 			} else {
 				continue
@@ -191,10 +195,9 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 		if fields[0] == "#ifndef" {
 			if conditional.IsSkippingLines() {
 				conditional.PushState(conditional.CurrentState())
-			} else if err := evalCondition(); err != nil {
+			} else if err := evalCondition(true); err != nil {
 				return false, err
 			} else {
-				conditional.ToggleState()
 				continue
 			}
 		}

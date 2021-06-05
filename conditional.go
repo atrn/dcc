@@ -13,7 +13,7 @@ import "errors"
 type ScanState int
 
 const (
-	TrueConditionState = iota
+	TrueConditionState ScanState = iota
 	FalseConditionState
 	InElseState
 )
