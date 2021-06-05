@@ -167,6 +167,17 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			return nil
 		}
 
+		if fields[0] == "#error" {
+			if !conditional.IsSkippingLines() {
+				message := strings.Join(fields[1:], " ")
+				if message == "" {
+					message = "#error raised without message"
+				}
+				return false, reportErrorInFile(filename, lineNumber, message)
+			}
+			continue
+		}
+
 		if fields[0] == "#ifdef" {
 			if conditional.IsSkippingLines() {
 				conditional.PushState(conditional.CurrentState())

@@ -29,53 +29,19 @@ allowing automatic re-compilation when build options change.
 
 `dcc` is written in Go and obviously requires Go installed to build
 (see [golang.org](http://golang.org/)). `dcc` uses only standard Go
-packages and is _trivially_ built using the `go build` command.  To
-automate some other aspects of building a small `Makefile` is supplied
-which provides the following targets:
+packages and is _trivially_ built using the `go build` command.
 
-- make all  
-  Build `dcc`. The default target.
-- make clean  
-  Remove any built `dcc`.
-- make install  
-  Install `dcc` into `$(dest)`.
-
-
-### Installation
-
-The `make install` target copies the `dcc` executable to a
-directory named by the _$(dest)_ make variable. The default
-installation location is,
-
-    $HOME/bin
-
-This can be overriden by setting `dest` on the command line
-when installing. E.g.,
-
-    $ make install dest=/opt/bin
-
-### `dc++`
-
-`dcc` may be installed with the name `dc++`. This is not done by
-default since it isn't strictly required - `dcc` either determines
-the source language from filename extensions or can be explicitly
-told via command line option.
-
-Install `dcc` executable,
-
-    $ cp dcc /some/where/bin/dcc
-
-Create `dc++` link.
-
-    $ ln /some/where/bin/dcc /some/where/bin/dc++
-
+To install dcc to your Go `$GOBIN` use `go install` otherwise
+simply copy the `dcc` executable to the desired _bin_ directory.
 
 ## Usage
 
 `dcc` usage is similar to that of `cc(1)`, `gcc(1)` and similar
 compiler drivers,
 
+```
     $ dcc <option...> <pathname...>
+```
 
 Like `cc` et al `dcc` compiles source files to object files using the
 options passed on the command line. If a `-c` is passed `dcc` stops
@@ -138,24 +104,36 @@ dependency information (libraries).
 These options apply to `dcc` itself and are not passed on to the
 compiler,
 
-- --help 
-  Get help.
-- --debug 
-  Enable `dcc` debug output.
-- --cpp 
-  Compile source as C++ rather than C.
-- --force 
-  Rebuild everything, ignore dependencies.
-- --quiet 
-  Don't output the commands being executed.
-- --exe <path> 
-  Compile and link an executable called <path>.
-- --dll <path> 
-  Compile and create a shared library called <path>.
-- --lib <path> 
-  Compile and create a static library, <path>.
-- -j<number> 
-  Use <number> parallel compilations.
+- \-\-help  
+Get help.
+- \-\-version  
+Output the dcc version number and exit.
+- \-\-debug  
+Enable `dcc` debug output.
+- \-\-cpp  
+Compile source as C++ rather than C.
+- \-\-force  
+Rebuild everything, ignore dependencies.
+- \-\-quiet  
+Don't output the commands being executed.
+- \-\-exe _path_  
+Compile and link an executable called _path_.
+- \-\-dll _path_  
+Compile and create a shared library called _path_.
+- \-\-lib _path_  
+Compile and create a static library, _path_.
+- \-j_number_  
+Use _number_ parallel compilations.
+- \-objdir _directory_  
+Create object files in _directory_ (passed to the
+underlying compiler but also used to defne where dcc
+writes files).
+- \-\-write\-compile\-commands  
+Output a `compile_commands.json` file to the same directory
+where object files are written.
+- \-\-append\-compile\-commands  
+Append compilation commands to the `compile_commands.json`file in the
+same directory.
 
 ### --exe, --dll, --lib
 
@@ -283,11 +261,46 @@ Options files may contain a special line `#inherits` to indicate they
 want to _inherit_ values set in by higher level, in the directory
 hierarchy sense, file. It is similar to a C `#include`.
 
-A `#inherits` directive with no arguments means _search for a file
-with the same name as mine in a higher level directory and reads its
-contents_. Optionally a `#inherits` may specify the filename to be
-searched for. In either case it is an error to *not* inherit the
-file.
+An `#inherits` directive accepts no arguments and searches for a file
+with the same name as the file that includes the directive in a higher
+level directory.
+
+#### Conditional option processing
+
+Options files may include C pre-processor like conditionals to
+conditonal define compiler and linker options, and for "LIBS" files,
+libraries.
+
+As with `#include` conditional directives mimic the C pre-processor's
+`#ifdef` and `#ifndef` and also allow for an `#else` clause (but there
+is no `#elif`).  Conditional sections are terminated with `#endif`.
+
+Conditionals **must** start in the first column.
+
+Unlike the C pre-processor dcc options files do not test for the
+definition of macros but instead use environment variables.
+
+Conditionals may be nested.
+
+#### Raisng Errors
+
+The `#error` directive allows options files to purposefully raise
+errors.  `#error` is useful with conditional sections to raise
+raise errors if environment variables are not defined as
+expected.
+
+Any text following the `#error` directive is reported as the error to
+the user.
+
+#### Options file directives summary
+
+- `#include` _filename_
+- `#inherit`
+- `#ifdef` _envvar_
+- `#ifndef` _envvar_
+- `#else`
+- `#endif`
+- `#error` _[_ _text_ _]_
 
 ## Implementation
 

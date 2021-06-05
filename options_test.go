@@ -18,19 +18,23 @@ func expectValues(t *testing.T, options *Options, expectedValues []string) {
 	}
 }
 
-func readOptionsFromString(t *testing.T, data string) *Options {
+func readOptionsFromString(data string) (*Options, error) {
 	options := new(Options)
 	r := strings.NewReader(data)
-	if ok, err := options.ReadFromReader(r, "<data>", nil); !ok {
-		t.Fatalf("reading options failed for data %q", data)
-	} else if err != nil {
+	_, err := options.ReadFromReader(r, "<data>", nil)
+	return options, err
+}
+
+func mustReadOptionsFromString(t *testing.T, data string) *Options {
+	options, err := readOptionsFromString(data)
+	if err != nil {
 		t.Fatal(err)
 	}
 	return options
 }
 
 func testOptions(t *testing.T, data string, expectedValues []string) {
-	options := readOptionsFromString(t, data)
+	options := mustReadOptionsFromString(t, data)
 	expectValues(t, options, expectedValues)
 }
 
@@ -126,4 +130,37 @@ c-value
 d-value
 `
 	testOptions(t, data, []string{"a-value", "c-value", "d-value"})
+}
+
+func TestErrors(t *testing.T) {
+	data := `
+#error Some thing bad happened
+`
+	_, err := readOptionsFromString(data)
+	if err == nil {
+		t.Fail()
+	}
+	if !strings.HasSuffix(err.Error(), "Some thing bad happened") {
+		t.Fatalf("#error produced unexpected error %q", err.Error())
+	}
+
+	data = `
+#ifdef NOTDEF
+#error Some thing bad happened
+#endif
+`
+	_, err = readOptionsFromString(data)
+	if err != nil {
+		t.Fatalf("conditional #error returned unexpected error %q", err.Error())
+	}
+
+	data = `
+#ifdef HOME
+#error Some thing bad happened
+#endif
+`
+	_, err = readOptionsFromString(data)
+	if err == nil {
+		t.Fatal("conditional #error did not return expected error")
+	}
 }
