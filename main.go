@@ -405,6 +405,14 @@ func main() {
 			}
 			setMode(arg, CompileAndMakeDLL)
 
+		case arg == "--plugin":
+			if i++; i < len(os.Args) {
+				outputPathname = os.Args[i]
+			} else {
+				log.Fatalf("%s: library filename required", arg)
+			}
+			setMode(arg, CompileAndMakePlugin)
+
 		case macos && arg == "-framework":
 			libraryFiles.Append(arg)
 			if i++; i < len(os.Args) {
@@ -412,6 +420,12 @@ func main() {
 			}
 
 		case macos && (arg == "-macosx_version_min" || arg == "-macosx_version_max"):
+			linkerOptions.Append(arg)
+			if i++; i < len(os.Args) {
+				linkerOptions.Append(os.Args[i])
+			}
+
+		case macos && arg == "-bundle_loader":
 			linkerOptions.Append(arg)
 			if i++; i < len(os.Args) {
 				linkerOptions.Append(os.Args[i])
@@ -622,6 +636,9 @@ func main() {
 
 	case CompileAndMakeDLL:
 		err = Dll(outputPathname, inputFilenames, libraryFiles, linkerOptions, otherFiles, frameworks)
+
+	case CompileAndMakePlugin:
+		err = Plugin(outputPathname, inputFilenames, libraryFiles, linkerOptions, otherFiles, frameworks)
 
 	case CompileAndMakeLib:
 		err = Lib(outputPathname, inputFilenames)

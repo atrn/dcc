@@ -15,10 +15,13 @@ var platform = Platform{
 	ObjectFileSuffix:  ".o",
 	DynamicLibPrefix:  "lib",
 	DynamicLibSuffix:  ".so",
+	PluginPrefix:      "lib",
+	PluginSuffix:      ".so",
 	StaticLibPrefix:   "lib",
 	StaticLibSuffix:   ".a",
 	DefaultExecutable: "a.out",
 	LibraryPaths:      []string{"/usr/lib", "/lib"},
 	CreateLibrary:     ElfCreateLibrary,
 	CreateDLL:         ElfCreateDLL,
+	CreatePlugin:      ElfCreateDLL,
 }

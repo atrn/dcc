@@ -385,3 +385,19 @@ Name of the `.dcc.d` dependency file directory.
 Name of the object file directory.
 - JOBS  
 Number of compilations to run in parallel.
+
+
+## Changelog
+
+### version 0.0.3
+
+Add --plugin option and support for linking _bundle_ files on macOS
+
+### version 0.0.2
+
+Added C-preprocessor style conditional and #error directives to
+optons files.
+
+### version 0.0.1
+
+Initial _alpha_ version.

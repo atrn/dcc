@@ -23,10 +23,13 @@ var platform = Platform{
 	StaticLibSuffix:   ".a",
 	DynamicLibPrefix:  "lib",
 	DynamicLibSuffix:  ".dylib",
+	PluginPrefix:      "",
+	PluginSuffix:      ".bundle",
 	DefaultExecutable: "a.out",
 	LibraryPaths:      []string{"/usr/lib"},
 	CreateLibrary:     MacosCreateLibrary,
 	CreateDLL:         MacosCreateDLL,
+	CreatePlugin:      MacosCreatePlugin,
 }
 
 func logCommand(cmd string, args []string) {
@@ -65,6 +68,18 @@ func MacosCreateLibrary(filename string, objectFiles []string) error {
 //
 func MacosCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
 	args := []string{"-shared", "-o", filename}
+	args = append(args, linkerOptions...)
+	args = append(args, objectFiles...)
+	args = append(args, libraryFiles...)
+	args = append(args, frameworks...)
+	logCommand(ActualCompiler.Name(), args)
+	return Exec(ActualCompiler.Name(), args, os.Stderr)
+}
+
+// MacosCreatePlugin creates a bundle
+//
+func MacosCreatePlugin(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
+	args := []string{"-bundle", "-o", filename}
 	args = append(args, linkerOptions...)
 	args = append(args, objectFiles...)
 	args = append(args, libraryFiles...)

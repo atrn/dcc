@@ -16,6 +16,7 @@ const (
 	CompileSourceFiles
 	CompileAndMakeLib
 	CompileAndMakeDLL
+	CompileAndMakePlugin
 )
 
 func (v RunningMode) String() string {
@@ -32,9 +33,9 @@ func (v RunningMode) String() string {
 		return "CompileAndMakeLib"
 	case CompileAndMakeDLL:
 		return "CompileAndMakeDLL"
+	case CompileAndMakePlugin:
+		return "CompileAndMakePlugin"
 	default:
 		return "*!* INVALID RunningMode VALUE *!*"
 	}
 }
-
-

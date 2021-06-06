@@ -27,10 +27,13 @@ type Platform struct {
 	StaticLibSuffix   string
 	DynamicLibPrefix  string
 	DynamicLibSuffix  string
+	PluginPrefix      string
+	PluginSuffix      string
 	DefaultExecutable string
 	LibraryPaths      []string
 	CreateLibrary     func(string, []string) error
 	CreateDLL         func(string, []string, []string, []string, []string) error
+	CreatePlugin      func(string, []string, []string, []string, []string) error
 	SelectTarget      func(*Platform, string) error
 }
 
@@ -46,6 +49,13 @@ func (p *Platform) StaticLibrary(name string) string {
 //
 func (p *Platform) DynamicLibrary(name string) string {
 	return p.DynamicLibPrefix + name + p.DynamicLibSuffix
+}
+
+// PluginFile transforms a filename "stem" to the name of
+// a "plugin" on the host platform.
+//
+func (p *Platform) PluginFile(name string) string {
+	return p.PluginPrefix + name + p.PluginSuffix
 }
 
 // PlatformSpecific is a pathname filter function used with the

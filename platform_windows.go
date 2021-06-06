@@ -24,6 +24,7 @@ var platform = Platform{
 	LibraryPaths:      filepath.SplitList(Getenv("LIB", "")),
 	CreateLibrary:     WindowsCreateLibrary,
 	CreateDLL:         WindowsCreateDLL,
+	CreatePlugin:      WindowsCreateDLL,
 }
 
 // WindowsCreateLibrary creates a static library from the supplied object files
