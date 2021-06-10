@@ -209,7 +209,7 @@ func main() {
 	// So we have to look for a -o and transfer it's value to our variable and
 	// remove it from the options.
 	//
-	if index := compilerOptions.FindFile("-o"); index != -1 {
+	if index := compilerOptions.OptionIndex("-o"); index != -1 {
 		if index == len(compilerOptions.Values)-1 {
 			log.Fatalf("invalid -o option in compiler options file %q", optionsFilename)
 		}

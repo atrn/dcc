@@ -93,10 +93,10 @@ func (o *Options) SetFrom(other *Options) {
 	o.fileinfo = other.fileinfo
 }
 
-// FindFile locates a specific option and returns its index within the
-// receiver's Values.  If no option is found -1 is returned.
+// OptionIndex locates a specific option and returns its index within
+// the receiver's Values.  If no option is found -1 is returned.
 //
-func (o *Options) FindFile(s string) int {
+func (o *Options) OptionIndex(s string) int {
 	for i := 0; i < len(o.Values); i++ {
 		if o.Values[i] == s {
 			return i
