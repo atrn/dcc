@@ -200,9 +200,11 @@ func main() {
 
 	// Get compiler options from the options file.
 	//
-	_, err = compilerOptions.ReadFromFile(filepath.Join(DccDir, optionsFilename), nil)
-	if err != nil && !os.IsNotExist(err) {
-		log.Fatal(err)
+	if path, found := FindFileWithName(optionsFilename); found {
+		_, err = compilerOptions.ReadFromFile(path, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// A -o in an options file is problematic, we keep that information elsewhere.
@@ -226,13 +228,15 @@ func main() {
 
 	// Now we do the same for the linker options. We use the "LDFLAGS" file.
 	//
-	_, err = linkerOptions.ReadFromFile(filepath.Join(DccDir, LDFLAGSFILE), func(s string) string {
-		// Collect directories named via -L in libraryDirs
-		if strings.HasPrefix(s, "-L") {
-			libraryDirs = append(libraryDirs, s[2:])
-		}
-		return s
-	})
+	if path, found := FindFileWithName(LDFLAGSFILE); found {
+		_, err = linkerOptions.ReadFromFile(path, func(s string) string {
+			// Collect directories named via -L in libraryDirs
+			if strings.HasPrefix(s, "-L") {
+				libraryDirs = append(libraryDirs, s[2:])
+			}
+			return s
+		})
+	}
 	setLinkOpts := false
 	if os.IsNotExist(err) {
 		setLinkOpts = true
@@ -669,13 +673,16 @@ func main() {
 func makeCompilerOption(name, defcmd string) *Options {
 	cmd := Getenv(name, defcmd)
 	opts := new(Options)
-	fileExists, err := opts.ReadFromFile(filepath.Join(DccDir, name), nil)
-	if err != nil && !os.IsNotExist(err) {
-		log.Fatal(err)
-	}
-	if !fileExists {
+	path, fileExists := FindFileWithName(name)
+	if fileExists {
+		_, err := opts.ReadFromFile(path, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
 		opts.Append(cmd)
-	} else if opts.Empty() {
+	}
+	if opts.Empty() {
 		opts.Append(defcmd)
 	}
 	return opts
@@ -796,7 +803,11 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 	var frameworkDirs []string
 	captureNext := false
 	prevs := ""
-	_, err := libraryFiles.ReadFromFile(filepath.Join(DccDir, libsFile), func(s string) string {
+	path, found := FindFileWithName(libsFile)
+	if !found {
+		return nil
+	}
+	_, err := libraryFiles.ReadFromFile(path, func(s string) string {
 		if Debug {
 			log.Printf("LIBS: filter %q", s)
 		}
@@ -843,12 +854,12 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 		}
 		return s
 	})
+	if err != nil {
+		return err
+	}
 	for index := range frameworkDirs {
 		frameworkDirs[index] = "-F" + frameworkDirs[index]
 	}
 	*frameworks = append(frameworkDirs, (*frameworks)...)
-	if err != nil && os.IsNotExist(err) {
-		err = nil
-	}
-	return err
+	return nil
 }

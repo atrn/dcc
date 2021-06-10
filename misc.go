@@ -9,6 +9,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,6 +18,19 @@ import (
 	"strconv"
 	"strings"
 )
+
+// Assert that a predicate is true, panic if not.
+//
+func Assert(predicate bool, message string) {
+	if !predicate {
+		_, filename, line, ok := runtime.Caller(1)
+		if ok {
+			panic(fmt.Errorf("%s (%s:%d)", message, filename, line))
+		} else {
+			panic(errors.New(message))
+		}
+	}
+}
 
 // GetProgramName returns the command name used to run this program.
 //
@@ -82,4 +97,25 @@ func MustGetwd() string {
 		log.Fatal(err)
 	}
 	return s
+}
+
+// Remove any, single byte, delimiters from a possibly delimited
+// string.
+//
+func RemoveDelimiters(s string, start, end byte) string {
+	switch n := len(s); {
+	case n < 2:
+		return s
+	case s[0] != start:
+		return s
+	case s[n-1] != end:
+		return s
+	default:
+		return s[1 : n-1]
+	}
+}
+
+//
+func LowercaseFilenameExtension(path string) string {
+	return strings.ToLower(filepath.Ext(path))
 }

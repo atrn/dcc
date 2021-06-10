@@ -81,18 +81,17 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 	return nil
 }
 
-var standardPath map[string]struct{} = nil
+var standardPaths = make(StringSet)
 
 func endash(values []string) (dashed []string) {
-	if standardPath == nil {
-		standardPath = make(map[string]struct{})
+	if standardPaths.IsEmpty() {
 		for _, name := range platform.LibraryPaths {
-			standardPath[name] = struct{}{}
+			standardPaths.Insert(name)
 		}
 	}
 	for _, name := range values {
 		dir, base := filepath.Dir(name), filepath.Base(name)
-		if _, found := standardPath[dir]; found {
+		if standardPaths.Contains(dir) {
 			s := strings.TrimSuffix(base, platform.StaticLibSuffix)
 			if s == base {
 				s = strings.TrimSuffix(base, platform.DynamicLibSuffix)

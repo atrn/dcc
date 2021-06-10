@@ -10,63 +10,56 @@ package main
 
 import (
 	"path/filepath"
-	"strings"
 )
 
-var cppSet = map[string]struct{}{
-	".cc":  struct{}{},
-	".cpp": struct{}{},
-	".cxx": struct{}{},
-	".c++": struct{}{},
-	".hh":  struct{}{},
-	".hpp": struct{}{},
-	".hxx": struct{}{},
-	".h++": struct{}{},
+var cppSet = StringSet{
+	".cc":  {},
+	".cpp": {},
+	".cxx": {},
+	".c++": {},
+	".hh":  {},
+	".hpp": {},
+	".hxx": {},
+	".h++": {},
 }
 
-var sourceFileSet = map[string]struct{}{
-	".c":   struct{}{},
-	".cc":  struct{}{},
-	".cpp": struct{}{},
-	".cxx": struct{}{},
-	".c++": struct{}{},
-	".m":   struct{}{},
-	".mm":  struct{}{},
+var sourceFileSet = StringSet{
+	".c":   {},
+	".cc":  {},
+	".cpp": {},
+	".cxx": {},
+	".c++": {},
+	".m":   {},
+	".mm":  {},
 }
 
-var headerFileSet = map[string]struct{}{
-	".h":   struct{}{},
-	".hh":  struct{}{},
-	".hpp": struct{}{},
-	".hxx": struct{}{},
-	".h++": struct{}{},
-}
-
-func inSet(set map[string]struct{}, path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	_, found := set[ext]
-	return found
+var headerFileSet = StringSet{
+	".h":   {},
+	".hh":  {},
+	".hpp": {},
+	".hxx": {},
+	".h++": {},
 }
 
 // IsCPlusPlusFile returns true if the supplied pathname is that
 // of a C++ source file.
 //
 func IsCPlusPlusFile(path string) bool {
-	return inSet(cppSet, path)
+	return cppSet.Contains(LowercaseFilenameExtension(path))
 }
 
 // IsSourceFile returns true if the supplied pathname is that
 // of a C, C++ or Objective-C source file.
 //
 func IsSourceFile(path string) bool {
-	return inSet(sourceFileSet, path)
+	return sourceFileSet.Contains(LowercaseFilenameExtension(path))
 }
 
 // IsHeaderFile returns true if the supplied pathname is that
 // of a C/C++ header file.
 //
 func IsHeaderFile(path string) bool {
-	return inSet(headerFileSet, path)
+	return headerFileSet.Contains(LowercaseFilenameExtension(path))
 }
 
 // IsLibraryFile returns true if the supplied pathname is

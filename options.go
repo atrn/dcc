@@ -27,9 +27,9 @@ import (
 //
 type Options struct {
 	Values   []string    // option values
-	Path     string      // associated options file path
-	fileinfo os.FileInfo // options file info
-	mtime    time.Time   // options file modtime, mutable
+	Path     string      // associated file path
+	fileinfo os.FileInfo // actual options file info
+	mtime    time.Time   // options modtime, mutable
 }
 
 // FileInfo returns the receiver's os.FileInfo set when the
@@ -79,6 +79,8 @@ func (o *Options) SetModTime(t time.Time) {
 	o.mtime = t
 }
 
+// Return the options modification time.
+//
 func (o *Options) ModTime() time.Time {
 	return o.mtime
 }
@@ -117,22 +119,18 @@ func (o *Options) OptionIndex(s string) int {
 // read for some reason.
 //
 func (o *Options) ReadFromFile(filename string, filter func(string) string) (bool, error) {
-	actualFilename, _ := FindFile(filename, PlatformSpecific)
-	if Debug {
-		log.Printf("OPTIONS: %q -> actual filename %q", filename, actualFilename)
-	}
-	file, err := os.Open(actualFilename)
+	file, err := os.Open(filename)
 	if err != nil {
 		return false, err
 	}
 	defer file.Close()
-	o.Path = actualFilename
+	o.Path = filename
 	info, err := file.Stat()
 	if err != nil {
 		return true, err
 	}
-	o.mtime = info.ModTime()
 	o.fileinfo = info
+	o.mtime = info.ModTime() // TODO eliminate mtime, use info
 	return o.ReadFromReader(file, filename, filter)
 }
 
@@ -225,6 +223,7 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 		}
 
 		// #include <filename>
+		//
 		if fields[0] == "#include" {
 			if err := o.includeFile(filename, lineNumber, line, fields, filter); err != nil {
 				return false, err
@@ -233,6 +232,8 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 		}
 
 		// #inherit
+		//
+		//
 		if fields[0] == "#inherit" {
 			if err := o.inheritFile(filename, lineNumber, line, fields, filter); err != nil {
 				return false, err
@@ -261,28 +262,15 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 	return true, nil
 }
 
-func removeDelimiters(s string, start, end byte) string {
-	switch n := len(s) - 1; {
-	case n < 1:
-		return s
-	case s[0] != start:
-		return s
-	case s[n] != end:
-		return s
-	default:
-		return s[1:n]
-	}
-}
-
 func extractFilename(filename string) string {
 	if len(filename) < 2 {
 		return filename
 	}
 	if filename[0] == '"' {
-		return removeDelimiters(filename, '"', '"')
+		return RemoveDelimiters(filename, '"', '"')
 	}
 	if filename[0] == '<' {
-		return removeDelimiters(filename, '<', '>')
+		return RemoveDelimiters(filename, '<', '>')
 	}
 	return filename
 }
@@ -299,10 +287,16 @@ func (o *Options) includeFile(parentFilename string, lineNumber int, line string
 	if len(fields) != 2 {
 		return malformedLine(parentFilename, lineNumber, "#include", line)
 	}
-	name := extractFilename(fields[1])
-	path := filepath.Join(filepath.Dir(parentFilename), name)
+	Assert(fields[1] != "", "unexpected empty field returned from strings.Fields()")
+	filename := fields[1]
+	if filename[0] == '"' {
+		filename = RemoveDelimiters(filename, '"', '"')
+	} else if filename[0] == '<' {
+		filename = RemoveDelimiters(filename, '<', '>')
+	}
+	path := filepath.Join(filepath.Dir(parentFilename), filename)
 	if Debug {
-		log.Printf("DEBUG: %q include -> %q", parentFilename, path)
+		log.Printf("DEBUG: %q including %q", parentFilename, path)
 	}
 	_, err := o.ReadFromFile(path, filter)
 	return err
@@ -312,14 +306,13 @@ func (o *Options) inheritFile(parentFilename string, lineNumber int, line string
 	if len(fields) != 1 {
 		return malformedLine(parentFilename, lineNumber, "#inherit", line)
 	}
-
 	inheritedFilename := filepath.Base(parentFilename)
-	if filepath.Dir(inheritedFilename) != "." {
-		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("filename parameter to '#inherit' cannot contain path elements %q", line))
+	if Debug {
+		log.Printf("OPTIONS: %q #inherit (%q)", parentFilename, inheritedFilename)
 	}
 	path, _, found, err := FindFileFromDirectory(
 		inheritedFilename,
-		filepath.Clean(filepath.Join(filepath.Dir(parentFilename), "..")),
+		filepath.Join(filepath.Dir(parentFilename), ".."),
 		nil,
 	)
 	if err != nil {
@@ -330,7 +323,7 @@ func (o *Options) inheritFile(parentFilename string, lineNumber int, line string
 	}
 
 	if Debug {
-		log.Printf("DEBUG: %q #inherit -> %q", parentFilename, path)
+		log.Printf("DEBUG: %q #inheriting %q", parentFilename, path)
 	}
 
 	ok, err := o.ReadFromFile(path, filter)
@@ -350,8 +343,9 @@ func (o *Options) inheritFile(parentFilename string, lineNumber int, line string
 // modified of the two Options.
 //
 func MostRecentModTime(a *Options, b *Options) time.Time {
-	if a.mtime.After(b.mtime) {
-		return a.mtime
+	at, bt := a.ModTime(), b.ModTime()
+	if at.After(bt) {
+		return at
 	}
-	return b.mtime
+	return bt
 }

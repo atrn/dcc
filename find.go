@@ -16,6 +16,15 @@ import (
 
 var DebugFind = false // enable for verbose debug output
 
+// Given the base name for an options file this function finds the
+// actual file, using the various rules for searching for and
+// selecting files according to platform and returns the actual path
+// of the file that should be read.
+//
+func FindFileWithName(name string) (string, bool) {
+	return FindFile(filepath.Join(DccDir, name), nil)
+}
+
 // FindFile returns a path for a filename and a flag
 // indicating if the file was actually found.
 //
