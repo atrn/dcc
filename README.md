@@ -383,7 +383,7 @@ Name of the `.dcc` directory.
 Name of the `.dcc.d` dependency file directory.
 - OBJDIR  
 Name of the object file directory.
-- JOBS  
+- NUMJOBS  
 Number of compilations to run in parallel.
 
 

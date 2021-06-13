@@ -17,7 +17,6 @@ import (
 var platform = Platform{
 	DefaultCC:         "cc",
 	DefaultCXX:        "c++",
-	DefaultDepsDir:    DefaultDccDir + ".d",
 	ObjectFileSuffix:  ".o",
 	StaticLibPrefix:   "lib",
 	StaticLibSuffix:   ".a",

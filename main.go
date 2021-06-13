@@ -23,6 +23,11 @@ const (
 	// The default "hidden" directory where options files reside.
 	//
 	DefaultDccDir = ".dcc"
+
+	// The default "hidden" directory where compiler-generated
+	// dependency files reside.
+	//
+	DefaultDepsDir = ".dcc.d"
 )
 
 var (
@@ -48,6 +53,12 @@ var (
 	//
 	ActualCompiler Compiler
 
+	// DefaultNumJobs is the number of concurrent compilations
+	// dcc will perform by default.  The "2 + numcpu" is the
+	// same value used by the ninja build tool.
+	//
+	DefaultNumJobs = 2 + runtime.NumCPU()
+
 	// NumJobs is the number of concurrent compilations dcc will
 	// perform. By default this is two times the number of CPUs.
 	// Why? Well basically because that's what works well for me.
@@ -57,7 +68,7 @@ var (
 	// used to do that but 2*NCPU works better for what I build
 	// on my machines (not so modern C++, SSDs, 4/8 cores).
 	//
-	NumJobs int
+	NumJobs = GetenvInt("NUMJOBS", DefaultNumJobs)
 
 	// DccDir is the name of the directory where dcc-related files
 	// are stored. If this directory does not exist the current
@@ -65,19 +76,19 @@ var (
 	// to "hide" the various build files by putting them in a "dot"
 	// directory (which makes for cleaner source directories).
 	//
-	DccDir string
+	DccDir = Getenv("DCCDIR", DefaultDccDir)
 
 	// DepsDir is the name of the directory where the per-object
 	// file dependency files (.d files) are stored. This is usually
 	// ".dcc.d" except on windows.
 	//
-	DepsDir string
+	DepsDir = Getenv("DEPSDIR", DefaultDepsDir)
 
 	// ObjsDir is the name of the directory where object files
 	// are written. It is usually a relative path, relative to
 	// the source file.
 	//
-	ObjsDir string
+	ObjsDir = "."
 
 	// Quiet disables most messages when true. Usually dcc will
 	// print, to stderr, the commands being executed.
@@ -91,6 +102,36 @@ var (
 	// Debug, when true, enables debug output.
 	//
 	Debug = false
+
+	// CCFILE is the name of the "options file" that defines
+	// the name of the C compiler.
+	//
+	CCFILE = Getenv("CCFILE", "CC")
+
+	// CXXFILE is the name of the "options file" that defines
+	// the name of the C++ compiler.
+	//
+	CXXFILE = Getenv("CXXFILE", "CXX")
+
+	// CFLAGSFILE is the name of the "options file" that
+	// defines the options passed to the C compiler.
+	//
+	CFLAGSFILE = Getenv("CFLAGSFILE", "CFLAGS")
+
+	// CXXFLAGSFILE is the name of the "options file" that
+	// defines the options passed to the C++ compiler.
+	//
+	CXXFLAGSFILE = Getenv("CXXFLAGSFILE", "CXXFLAGS")
+
+	// LDFLAGSFILE is the name of the "options file" that defines
+	// the options passed to the linker (aka "loader").
+	//
+	LDFLAGSFILE = Getenv("LDFLAGSFILE", "LDFLAGS")
+
+	// LIBSFILE is the name of the "options file" that defines
+	// the names of the libraries used when linking.
+	//
+	LIBSFILE = Getenv("LIBSFILE", "LIBS")
 )
 
 func main() {
@@ -112,30 +153,6 @@ func main() {
 		defer CatchPanics()
 	}
 
-	// The names of the files read to obtain options for compiling
-	// and linking.  These can be overriden via the environment
-	// and undergo platform-specific file selection, e.g. using
-	// CFLAGS.linux in preference to CFLAGS on a Linux system.
-	//
-	CCFILE := Getenv("CCFILE", "CC")
-	CXXFILE := Getenv("CXXFILE", "CXX")
-	CFLAGSFILE := Getenv("CFLAGSFILE", "CFLAGS")
-	CXXFLAGSFILE := Getenv("CXXFLAGSFILE", "CXXFLAGS")
-	LDFLAGSFILE := Getenv("LDFLAGSFILE", "LDFLAGS")
-	LIBSFILE := Getenv("LIBSFILE", "LIBS")
-
-	DccDir = Getenv("DCCDIR", DefaultDccDir)             // TODO: must be a relative path
-	DepsDir = Getenv("DEPSDIR", platform.DefaultDepsDir) // TODO: must be a relative path
-	ObjsDir = Getenv("OBJDIR", ".")                      // TODO: must be a relative path
-	NumJobs = GetenvInt("JOBS", 2+runtime.NumCPU())      // same default as ninja
-
-	_, err := Stat(DccDir)
-	if os.IsNotExist(err) {
-		DccDir = "."
-	} else if err != nil {
-		log.Fatal(err)
-	}
-
 	runningMode := ModeNotSpecified
 	outputPathname := ""
 	dasho := ""
@@ -147,7 +164,7 @@ func main() {
 	cppCompiler := makeCompilerOption(CXXFILE, platform.DefaultCXX)
 
 	// We assume we're compiling C and define a function to switch
-	// things to C++. Which we check for next.
+	// things to C++. We'll check for that next.
 	//
 	underlyingCompiler, optionsFilename := cCompiler, CFLAGSFILE
 	cplusplus := func() {
@@ -158,7 +175,7 @@ func main() {
 	//
 	// - our invocation name ends in "++"
 	// - the --cpp option was supplied
-	// - any input file names are C++ source files
+	// - any of the input files are C++ source files
 	//
 	if strings.HasSuffix(Myname, "++") {
 		cplusplus()
@@ -183,6 +200,7 @@ func main() {
 	// which files in inputFilenames are the names of source files.
 	//
 	var (
+		err             error
 		compilerOptions = new(Options)
 		linkerOptions   = new(Options)
 		libraryFiles    = new(Options)
@@ -201,7 +219,7 @@ func main() {
 	// Get compiler options from the options file.
 	//
 	if path, found := FindFileWithName(optionsFilename); found {
-		_, err = compilerOptions.ReadFromFile(path, nil)
+		_, err := compilerOptions.ReadFromFile(path, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -248,6 +266,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Libraries
+	//
 	if err = readLibs(LIBSFILE, libraryFiles, &libraryDirs, &frameworks); err != nil {
 		log.Fatal(err)
 	}
@@ -258,7 +278,7 @@ func main() {
 		log.Printf("LIBS: frameworks %v", frameworks)
 	}
 
-	// Helper to set our running mode and set it once.
+	// Helper to set our running mode, once and once only.
 	//
 	setMode := func(arg string, mode RunningMode) {
 		if runningMode != ModeNotSpecified {
@@ -590,7 +610,7 @@ func main() {
 	//
 	for index, name := range libraryFiles.Values {
 		if strings.HasPrefix(name, "-l") {
-			path, _, found, err := FindLib(libraryDirs, name[2:])
+			path, _, found, err := FindLibrary(libraryDirs, name[2:])
 			switch {
 			case err != nil:
 				log.Fatal(err)
@@ -727,7 +747,7 @@ Environment
     DEPSDIR	    Name of .d file directory (%s).
     OBJDIR	    Name of .o file directory (%s).
     DCCDIR	    Name of the dcc-options directory (%s).
-    NJOBS           Number of compile job (%d).
+    NJOBS           Number of compile jobs (%d).
 
 The following variables define the actual names used for
 the options files (see "Files" below).
@@ -775,10 +795,10 @@ different options files and select specific options.
 		Myname,
 		platform.DefaultCC,
 		platform.DefaultCXX,
-		platform.DefaultDepsDir,
+		DefaultDepsDir,
 		ObjsDir,
 		DccDir,
-		runtime.NumCPU(),
+		DefaultNumJobs,
 		runtime.GOOS,
 		runtime.GOARCH,
 	)
@@ -845,7 +865,7 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 			return ""
 		}
 		if strings.HasPrefix(s, "-l") {
-			if path, _, found, err := FindLib(*libraryDirs, s[2:]); err != nil {
+			if path, _, found, err := FindLibrary(*libraryDirs, s[2:]); err != nil {
 				log.Printf("warning: failed to find %s: %s", *libraryDirs, err)
 			} else if found {
 				return path
