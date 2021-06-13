@@ -5,25 +5,53 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
-func runOneTestCase(cwd string, fn func() error) error {
-	ocwd := MustGetwd()
-	defer func() {
-		os.Chdir(ocwd)
-		CurrentDirectory = ocwd
-	}()
-	cwd, err := filepath.Abs(cwd)
+func invalidateStatCache() {
+	statCacheMutex.Lock()
+	statCache = make(map[string]os.FileInfo)
+	statCacheMutex.Unlock()
+}
+
+func runOneTestCase(t *testing.T, dirname, filename, cwd string) {
+	invalidateStatCache()
+
+	fullpath := filepath.Join(dirname, filename)
+	abspath, err := filepath.Abs(fullpath)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
-	err = os.Chdir(cwd)
-	if err == nil {
-		CurrentDirectory = cwd
-		err = fn()
+	err = ioutil.WriteFile(fullpath, []byte{}, 0666)
+	if err != nil {
+		t.Fatal(err)
 	}
-	return err
+
+	defer func(name string) {
+		if err := os.Remove(name); err != nil {
+			t.Fatal(err)
+		}
+	}(fullpath)
+
+	defer func(dir string) {
+		if err := os.Chdir(dir); err != nil {
+			t.Fatal(err)
+		}
+	}(MustGetwd())
+
+	cwd, err = filepath.Abs(cwd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err = os.Chdir(cwd); err != nil {
+		t.Fatal(err)
+	} else if foundpath, found := FindFile(filename); !found {
+		t.Fatalf("%q not found", filename)
+	} else if foundpath != abspath {
+		t.Fatalf("found %q which is not the expected %q", foundpath, fullpath)
+	}
 }
 
 func TestFind(t *testing.T) {
@@ -37,8 +65,8 @@ func TestFind(t *testing.T) {
 	}
 
 	defer removeTestData()
-
 	removeTestData()
+
 	err := os.MkdirAll("testdata/root/child", 0777)
 	if err != nil {
 		t.Fatal(err)
@@ -47,20 +75,19 @@ func TestFind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	filename := "test.file"
-	fullpath := path.Join("testdata/root/", DefaultDccDir, filename)
-
-	err = ioutil.WriteFile(fullpath, []byte{}, 0666)
+	err = os.Mkdir("testdata/"+DefaultDccDir, 0777)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = runOneTestCase("testdata/root/child", func() error {
-		_, found := FindFile(filename, PlatformSpecific)
-		if !found {
-			t.Fatalf("%q not found", filename)
-		}
-		return nil
-	})
+	dirname1 := "testdata/root/child"
+	dirname2 := path.Join("testdata/root", DefaultDccDir)
+	dirname3 := path.Join("testdata", DefaultDccDir)
+
+	filename := "testfile"
+	runOneTestCase(t, dirname1, filename, "testdata/root/child")
+	runOneTestCase(t, dirname2, filename, "testdata/root/child")
+	runOneTestCase(t, dirname3, filename, "testdata/root/child")
+	runOneTestCase(t, dirname1, filename+"."+runtime.GOOS, "testdata/root/child")
+	runOneTestCase(t, dirname3, filename+"."+runtime.GOOS+"_"+runtime.GOARCH, "testdata/root/child")
 }

@@ -9,31 +9,24 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 var DebugFind = false // enable for verbose debug output
 
-// Given the base name for an options file this function finds the
-// actual file, using the various rules for searching for and
-// selecting files according to platform and returns the actual path
-// of the file that should be read.
+// FindFile returns a path for a filename and a flag indicating if the
+// file was actually found.
 //
-func FindFileWithName(name string) (string, bool) {
-	return FindFile(filepath.Join(DccDir, name), nil)
-}
-
-// FindFile returns a path for a filename and a flag
-// indicating if the file was actually found.
-//
-func FindFile(filename string, f func(string) string) (string, bool) {
+func FindFile(filename string) (string, bool) {
 	ofilename := filename
 	if DebugFind {
 		log.Printf("DEBUG FIND: FindFile %q", ofilename)
 	}
-	path, _, exists, err := FindFileFromCwd(filename, f)
+	path, _, exists, err := FindFileFromCwd(filename)
 	if err == nil && exists {
 		if DebugFind {
 			log.Printf("DEBUG FIND: FindFile %q -> %q", filename, path)
@@ -51,16 +44,16 @@ func FindFile(filename string, f func(string) string) (string, bool) {
 
 // FindFileFromCwd finds a file starting from the current directory and searching towards the root.
 //
-func FindFileFromCwd(filename string, f func(string) string) (string, os.FileInfo, bool, error) {
+func FindFileFromCwd(filename string) (string, os.FileInfo, bool, error) {
 	if DebugFind {
 		log.Printf("DEBUG FIND: FindFileFromCwd %q", filename)
 	}
-	return FindFileFromDirectory(filename, CurrentDirectory, f)
+	return FindFileFromDirectory(filename, MustGetwd())
 }
 
 // FindFileFromDirectory finds a file starting from the specified directory, search towards the root.
 //
-func FindFileFromDirectory(filename, dir string, f func(string) string) (string, os.FileInfo, bool, error) {
+func FindFileFromDirectory(filename, dir string) (string, os.FileInfo, bool, error) {
 	if DebugFind {
 		log.Printf("DEBUG FIND: FindFileFromDirectory %q %q", filename, dir)
 	}
@@ -70,60 +63,82 @@ func FindFileFromDirectory(filename, dir string, f func(string) string) (string,
 		dir = filepath.Dir(dir)
 		paths = append(paths, dir)
 	}
-	return FindFileOnPath(paths, filename, f)
+	paths = append(paths, dir)
+	return FindFileOnPath(paths, filename)
 }
 
 // FindFileOnPath finds a file along a search path.
 //
-func FindFileOnPath(paths []string, filename string, f func(string) string) (string, os.FileInfo, bool, error) {
-	logit := func(format string, args ...interface{}) {
-		if DebugFind {
-			log.Printf("DEBUG FIND: "+format, args...)
-		}
+func FindFileOnPath(paths []string, filename string) (string, os.FileInfo, bool, error) {
+	if DebugFind {
+		log.Printf("DEBUG FIND: FindFileOnPath %q %q", paths, filename)
 	}
-	logit("FindFileOnPath %q %q", paths, filename)
 	for _, dir := range paths {
-		path := filepath.Join(dir, filename)
-		logit("trying %q", path)
-		if f != nil {
-			newpath := f(path)
-			logit("transformed %q -> %q", path, newpath)
-			path = newpath
-		}
-		if info, err := Stat(path); err == nil {
-			logit("returning %q", path)
-			return path, info, true, nil
-		} else if !os.IsNotExist(err) {
-			logit("%s", err.Error())
+		if path, info, found, err := FindFileInDirectory(filename, dir); err != nil {
 			return "", nil, false, err
-		}
-
-		path = filepath.Join(dir, DefaultDccDir, filename)
-		logit("trying %q", path)
-		if f != nil {
-			newpath := f(path)
-			logit("transformed %q -> %q", path, newpath)
-			path = newpath
-		}
-		if info, err := Stat(path); err == nil {
-			logit("returning %q", path)
+		} else if found {
 			return path, info, true, nil
-		} else if !os.IsNotExist(err) {
-			logit("%s", err.Error())
-			return "", nil, false, err
 		}
 	}
-	logit("%q not found", filename)
+	if DebugFind {
+		log.Printf("DEBUG FIND: %q not found", filename)
+	}
 	return "", nil, false, nil
 }
 
-// FindLib finds a library file on a search path, either static or dynamic.
-//
-func FindLib(paths []string, name string) (string, os.FileInfo, bool, error) {
-	if path, info, found, err := FindFileOnPath(paths, platform.DynamicLibrary(name), nil); found || err != nil {
+func FindFileInDirectory(filename string, dirname string) (string, os.FileInfo, bool, error) {
+	filenameOs := fmt.Sprintf("%s.%s", filename, runtime.GOOS)
+	filenameOsArch := fmt.Sprintf("%s_%s", filenameOs, runtime.GOARCH)
+
+	try := func(dirname, filename string) (string, os.FileInfo, bool, error) {
+		path := filepath.Join(dirname, filename)
+		if DebugFind {
+			log.Printf("DEBUG FIND: FindFileInDirectory trying %q", path)
+		}
+		if info, err := Stat(path); err == nil {
+			if DebugFind {
+				log.Printf("DEBUG FIND: FindFileInDirectory returning %q", path)
+			}
+			return path, info, true, nil
+		} else if !os.IsNotExist(err) {
+			if DebugFind {
+				log.Printf("DEBUG FIND: FindFileInDirectory %q: %s", path, err.Error())
+			}
+			return path, nil, true, err
+		}
+		return "", nil, false, nil
+	}
+
+	tryAll := func() (string, os.FileInfo, bool, error) {
+		if path, info, found, err := try(dirname, filenameOsArch); err != nil || found {
+			return path, info, found, err
+		}
+		if path, info, found, err := try(dirname, filenameOs); err != nil || found {
+			return path, info, found, err
+		}
+		return try(dirname, filename)
+	}
+
+	if path, info, found, err := tryAll(); err != nil || found {
 		return path, info, found, err
 	}
-	if path, info, found, err := FindFileOnPath(paths, platform.StaticLibrary(name), nil); found || err != nil {
+
+	dirname = filepath.Join(dirname, DccDir)
+
+	if path, info, found, err := tryAll(); err != nil || found {
+		return path, info, found, err
+	}
+
+	return "", nil, false, nil
+}
+
+// FindLibrary finds a library file on a search path, either static or dynamic.
+//
+func FindLibrary(paths []string, name string) (string, os.FileInfo, bool, error) {
+	if path, info, found, err := FindFileOnPath(paths, platform.DynamicLibrary(name)); found || err != nil {
+		return path, info, found, err
+	}
+	if path, info, found, err := FindFileOnPath(paths, platform.StaticLibrary(name)); found || err != nil {
 		return path, info, found, err
 	}
 	return "", nil, false, nil

@@ -26,7 +26,7 @@ func makeCompileCommands(sourceFilenames []string, compilerOptions *Options, obj
 	commands := make([]CompileCommand, len(sourceFilenames))
 	for index, sourceFile := range sourceFilenames {
 		command := fmt.Sprintf("%s %s -o %s -c %s", ActualCompiler.Name(), compilerOptions.String(), ObjectFilename(sourceFile, objdir), sourceFile)
-		commands[index].Directory = CurrentDirectory
+		commands[index].Directory = DccCurrentDirectory
 		commands[index].Command = command
 		commands[index].File = sourceFile
 	}

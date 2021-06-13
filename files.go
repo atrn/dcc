@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-// CurrentDirectory is the path of the process working directory at startup
-//
-var CurrentDirectory = MustGetwd()
-
 // NewestOf returns the os.FileInfo time for the most recently
 // modified file in the slice of file names.
 //
@@ -61,8 +57,8 @@ func FileIsNewer(a os.FileInfo, b os.FileInfo) bool {
 // ObjectFilename returns the name of the object file for a given source file.
 //
 func ObjectFilename(path string, d string) string {
-	dd, bb := filepath.Dir(path), filepath.Base(path)
-	parts := strings.Split(dd, "/")
+	dirname, basename := filepath.Split(path)
+	parts := strings.Split(dirname, "/")
 	first, n := 0, len(parts)
 	if n > 0 {
 		for first < n && parts[first] == ".." {
@@ -70,9 +66,9 @@ func ObjectFilename(path string, d string) string {
 		}
 		if first > 0 {
 			if first == n {
-				path = filepath.Join(".", bb)
+				path = filepath.Join(".", basename)
 			} else {
-				path = filepath.Join(strings.Join(parts[first:], "/"), bb)
+				path = filepath.Join(strings.Join(parts[first:], "/"), basename)
 			}
 		}
 	}
@@ -89,9 +85,6 @@ func ObjectFilename(path string, d string) string {
 // DepsFilename returns the name of the dependencies file for a given object file.
 //
 func DepsFilename(path string) string {
-	if DepsDir == "" {
-		return path + ".d"
-	}
-	head, tail := filepath.Dir(path), filepath.Base(path)
-	return filepath.Join(head, DepsDir, tail) + ".d"
+	dirname, basename := filepath.Split(path)
+	return filepath.Join(dirname, DepsDir, basename) + ".d"
 }

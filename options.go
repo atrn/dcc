@@ -310,11 +310,7 @@ func (o *Options) inheritFile(parentFilename string, lineNumber int, line string
 	if Debug {
 		log.Printf("OPTIONS: %q #inherit (%q)", parentFilename, inheritedFilename)
 	}
-	path, _, found, err := FindFileFromDirectory(
-		inheritedFilename,
-		filepath.Join(filepath.Dir(parentFilename), ".."),
-		nil,
-	)
+	path, _, found, err := FindFileFromDirectory(inheritedFilename, filepath.Join(filepath.Dir(parentFilename), ".."))
 	if err != nil {
 		return err
 	}

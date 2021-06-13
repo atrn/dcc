@@ -37,6 +37,10 @@ var (
 	//
 	Myname string
 
+	// DccCurrentDirectory is the path of the process working directory at startup
+	//
+	DccCurrentDirectory = MustGetwd()
+
 	// IgnoreDependencies has dcc not perform any dependency checking
 	// and makes it assume everything is out of date, forcing everything
 	// to be rebuilt.
@@ -218,7 +222,7 @@ func main() {
 
 	// Get compiler options from the options file.
 	//
-	if path, found := FindFileWithName(optionsFilename); found {
+	if path, found := FindFile(optionsFilename); found {
 		_, err := compilerOptions.ReadFromFile(path, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -246,7 +250,7 @@ func main() {
 
 	// Now we do the same for the linker options. We use the "LDFLAGS" file.
 	//
-	if path, found := FindFileWithName(LDFLAGSFILE); found {
+	if path, found := FindFile(LDFLAGSFILE); found {
 		_, err = linkerOptions.ReadFromFile(path, func(s string) string {
 			// Collect directories named via -L in libraryDirs
 			if strings.HasPrefix(s, "-L") {
@@ -693,7 +697,7 @@ func main() {
 func makeCompilerOption(name, defcmd string) *Options {
 	cmd := Getenv(name, defcmd)
 	opts := new(Options)
-	path, fileExists := FindFileWithName(name)
+	path, fileExists := FindFile(name)
 	if fileExists {
 		_, err := opts.ReadFromFile(path, nil)
 		if err != nil {
@@ -823,7 +827,7 @@ func readLibs(libsFile string, libraryFiles *Options, libraryDirs *[]string, fra
 	var frameworkDirs []string
 	captureNext := false
 	prevs := ""
-	path, found := FindFileWithName(libsFile)
+	path, found := FindFile(libsFile)
 	if !found {
 		return nil
 	}
