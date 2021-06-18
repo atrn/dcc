@@ -9,10 +9,18 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
+)
+
+var (
+	OsSuffix     = fmt.Sprintf(".%s", runtime.GOOS)
+	ArchSuffix   = fmt.Sprintf(".%s", runtime.GOARCH)
+	OsArchSuffix = fmt.Sprintf(".%s_%s", runtime.GOOS, runtime.GOARCH)
 )
 
 // NewestOf returns the os.FileInfo time for the most recently
@@ -87,4 +95,64 @@ func ObjectFilename(path string, d string) string {
 func DepsFilename(path string) string {
 	dirname, basename := filepath.Split(path)
 	return filepath.Join(dirname, DepsDir, basename) + ".d"
+}
+
+// Basename returns base portion of a path, the filename.Base(),
+// taking into account the possibility the path may have an OS
+// and/or architecture specific suffix, which is removed.
+//
+func Basename(path string) string {
+	b := filepath.Base(path)
+	if strings.HasSuffix(b, OsArchSuffix) {
+		return strings.TrimSuffix(b, OsArchSuffix)
+	}
+	if strings.HasSuffix(b, ArchSuffix) {
+		return strings.TrimSuffix(b, ArchSuffix)
+	}
+	if strings.HasSuffix(b, OsSuffix) {
+		return strings.TrimSuffix(b, OsSuffix)
+	}
+	return b
+}
+
+// Dirname returns the directory portion of a path taking into account
+// the possibility the path may reside in the "dcc directory". I.e. it
+// returns the filepath.Dir() of a path removing the final ".dcc" if
+// it has one.
+//
+func Dirname(path string) string {
+	d := filepath.Dir(path)
+	if filepath.Base(d) == DccDir {
+		d = filepath.Dir(d)
+	}
+	return d
+}
+
+// OsSpecificFilename returns the OS-specfic verson of a path
+// (filename) by appending the OsSuffix to the path.
+//
+func OsSpecificFilename(path string) string {
+	return path + OsSuffix
+}
+
+// ArchSpecificFilename returns the architecture-specfic verson of a
+// path (filename) by appending the ArchSuffix to the path.
+//
+func ArchSpecificFilename(path string) string {
+	return path + ArchSuffix
+}
+
+// OsAndArchSpecificFilename returns the architecture and OS-specfic
+// verson of a path (filename) by appending the OsArchSuffix to the
+// path.
+//
+func OsAndArchSpecificFilename(path string) string {
+	return path + OsArchSuffix
+}
+
+// ParentDir returns the parent directory of a path taking into
+// account the possibility the path is in a ".dcc" directory.
+//
+func ParentDir(path string) string {
+	return filepath.Clean(filepath.Join(Dirname(path), ".."))
 }

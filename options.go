@@ -233,7 +233,6 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 
 		// #inherit
 		//
-		//
 		if fields[0] == "#inherit" {
 			if err := o.inheritFile(filename, lineNumber, line, fields, filter); err != nil {
 				return false, err
@@ -294,7 +293,7 @@ func (o *Options) includeFile(parentFilename string, lineNumber int, line string
 	} else if filename[0] == '<' {
 		filename = RemoveDelimiters(filename, '<', '>')
 	}
-	path := filepath.Join(filepath.Dir(parentFilename), filename)
+	path := filepath.Join(Dirname(parentFilename), filename)
 	if Debug {
 		log.Printf("DEBUG: %q including %q", parentFilename, path)
 	}
@@ -306,11 +305,11 @@ func (o *Options) inheritFile(parentFilename string, lineNumber int, line string
 	if len(fields) != 1 {
 		return malformedLine(parentFilename, lineNumber, "#inherit", line)
 	}
-	inheritedFilename := filepath.Base(parentFilename)
+	startingDir, inheritedFilename := ParentDir(parentFilename), Basename(parentFilename)
 	if Debug {
 		log.Printf("OPTIONS: %q #inherit (%q)", parentFilename, inheritedFilename)
 	}
-	path, _, found, err := FindFileFromDirectory(inheritedFilename, filepath.Join(filepath.Dir(parentFilename), ".."))
+	path, _, found, err := FindFileFromDirectory(inheritedFilename, startingDir)
 	if err != nil {
 		return err
 	}

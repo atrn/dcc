@@ -107,6 +107,10 @@ var (
 	//
 	Debug = false
 
+	// Debug "FindFile" operations when true.
+	//
+	DebugFind = false
+
 	// CCFILE is the name of the "options file" that defines
 	// the name of the C compiler.
 	//
@@ -144,15 +148,26 @@ func main() {
 
 	// Enable debug as early as possible.
 
-	if os.Getenv("DCCDEBUG") != "" {
-		Debug = true
+	if s := os.Getenv("DCCDEBUG"); s != "" {
+		if s == "find" {
+			DebugFind = true
+		} else if s == "all" {
+			Debug = true
+			DebugFind = true
+		} else {
+			Debug = true
+		}
 	} else {
 		for i := 1; i < len(os.Args); i++ {
 			if os.Args[i] == "--debug" {
 				Debug = true
 			}
+			if os.Args[i] == "--debug-find" {
+				DebugFind = true
+			}
 		}
 	}
+
 	if !Debug {
 		defer CatchPanics()
 	}

@@ -9,14 +9,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 )
-
-var DebugFind = false // enable for verbose debug output
 
 // FindFile returns a path for a filename and a flag indicating if the
 // file was actually found.
@@ -87,9 +83,6 @@ func FindFileOnPath(paths []string, filename string) (string, os.FileInfo, bool,
 }
 
 func FindFileInDirectory(filename string, dirname string) (string, os.FileInfo, bool, error) {
-	filenameOs := fmt.Sprintf("%s.%s", filename, runtime.GOOS)
-	filenameOsArch := fmt.Sprintf("%s_%s", filenameOs, runtime.GOARCH)
-
 	try := func(dirname, filename string) (string, os.FileInfo, bool, error) {
 		path := filepath.Join(dirname, filename)
 		if DebugFind {
@@ -110,10 +103,13 @@ func FindFileInDirectory(filename string, dirname string) (string, os.FileInfo, 
 	}
 
 	tryAll := func() (string, os.FileInfo, bool, error) {
-		if path, info, found, err := try(dirname, filenameOsArch); err != nil || found {
+		if path, info, found, err := try(dirname, OsAndArchSpecificFilename(filename)); err != nil || found {
 			return path, info, found, err
 		}
-		if path, info, found, err := try(dirname, filenameOs); err != nil || found {
+		if path, info, found, err := try(dirname, OsSpecificFilename(filename)); err != nil || found {
+			return path, info, found, err
+		}
+		if path, info, found, err := try(dirname, ArchSpecificFilename(filename)); err != nil || found {
 			return path, info, found, err
 		}
 		return try(dirname, filename)

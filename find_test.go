@@ -3,9 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
@@ -15,7 +13,54 @@ func invalidateStatCache() {
 	statCacheMutex.Unlock()
 }
 
-func runOneTestCase(t *testing.T, dirname, filename, cwd string) {
+const (
+	testDataDir  = "testdata"
+	testFilename = "testfile"
+)
+
+var (
+	projectDccDir   = filepath.Join(testDataDir, DefaultDccDir)
+	projectRootDir  = filepath.Join(testDataDir, "root")
+	projectChildDir = filepath.Join(projectRootDir, "child")
+)
+
+func makeTestDirs(t *testing.T) {
+	mustMkdir := func(path string) {
+		if err := os.MkdirAll(path, 0777); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mustMkdir(projectRootDir)
+	mustMkdir(projectChildDir)
+	mustMkdir(projectDccDir)
+}
+
+func removeTestDirs(t *testing.T) {
+	if err := os.RemoveAll("testdata"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func makeFile(t *testing.T, path string) {
+	if err := ioutil.WriteFile(path, []byte(path), 0666); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func checkFile(t *testing.T, path, content string) {
+	if data, err := os.ReadFile(path); err != nil {
+		t.Fatal(err)
+	} else if s := string(data); s != content {
+		t.Fatalf("%s: content (%q) does not match expected content (%q)", path, s, content)
+	}
+}
+
+func setupTest(t *testing.T) {
+	removeTestDirs(t)
+	makeTestDirs(t)
+}
+
+func singleFileTestCase(t *testing.T, dirname, filename, cwd string) {
 	invalidateStatCache()
 
 	fullpath := filepath.Join(dirname, filename)
@@ -23,10 +68,7 @@ func runOneTestCase(t *testing.T, dirname, filename, cwd string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ioutil.WriteFile(fullpath, []byte{}, 0666)
-	if err != nil {
-		t.Fatal(err)
-	}
+	makeFile(t, fullpath)
 
 	defer func(name string) {
 		if err := os.Remove(name); err != nil {
@@ -51,43 +93,22 @@ func runOneTestCase(t *testing.T, dirname, filename, cwd string) {
 		t.Fatalf("%q not found", filename)
 	} else if foundpath != abspath {
 		t.Fatalf("found %q which is not the expected %q", foundpath, fullpath)
+	} else {
+		checkFile(t, foundpath, fullpath)
 	}
 }
 
-func TestFind(t *testing.T) {
-	// DebugFind = true
+func Test_FindFile_DirectorySearching(t *testing.T) {
+	setupTest(t)
+	defer removeTestDirs(t)
+	singleFileTestCase(t, projectChildDir, testFilename, projectChildDir)
+	singleFileTestCase(t, projectRootDir, testFilename, projectChildDir)
+	singleFileTestCase(t, projectDccDir, testFilename, projectChildDir)
+}
 
-	removeTestData := func() {
-		err := os.RemoveAll("testdata")
-		if err != nil {
-			os.Stderr.WriteString("ERROR: " + err.Error())
-		}
-	}
-
-	defer removeTestData()
-	removeTestData()
-
-	err := os.MkdirAll("testdata/root/child", 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Mkdir("testdata/root/"+DefaultDccDir, 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Mkdir("testdata/"+DefaultDccDir, 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dirname1 := "testdata/root/child"
-	dirname2 := path.Join("testdata/root", DefaultDccDir)
-	dirname3 := path.Join("testdata", DefaultDccDir)
-
-	filename := "testfile"
-	runOneTestCase(t, dirname1, filename, "testdata/root/child")
-	runOneTestCase(t, dirname2, filename, "testdata/root/child")
-	runOneTestCase(t, dirname3, filename, "testdata/root/child")
-	runOneTestCase(t, dirname1, filename+"."+runtime.GOOS, "testdata/root/child")
-	runOneTestCase(t, dirname3, filename+"."+runtime.GOOS+"_"+runtime.GOARCH, "testdata/root/child")
+func Test_FindFile_PlatformSpecificSearches(t *testing.T) {
+	setupTest(t)
+	defer removeTestDirs(t)
+	singleFileTestCase(t, projectChildDir, OsSpecificFilename(testFilename), projectChildDir)
+	singleFileTestCase(t, projectDccDir, OsAndArchSpecificFilename(testFilename), projectChildDir)
 }
