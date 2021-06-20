@@ -293,7 +293,7 @@ func (o *Options) includeFile(parentFilename string, lineNumber int, line string
 	} else if filename[0] == '<' {
 		filename = RemoveDelimiters(filename, '<', '>')
 	}
-	path := filepath.Join(Dirname(parentFilename), filename)
+	path := filepath.Join(filepath.Dir(parentFilename), filename)
 	if Debug {
 		log.Printf("DEBUG: %q including %q", parentFilename, path)
 	}
