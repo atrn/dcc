@@ -19,7 +19,4 @@ var (
 
 	// ErrMultipleTargets means more than one target file was detected.
 	ErrMultipleTargets = errors.New("multiple targets found in dependency file")
-
-	// ErrNoParent means a #inherit directive has no directory pathname argument.
-	ErrNoParent = errors.New("#inherit failed to find a file to inherit")
 )

@@ -135,7 +135,7 @@ where object files are written.
 Append compilation commands to the `compile_commands.json`file in the
 same directory.
 
-### --exe, --dll, --lib
+### --exe, --dll, --plugin, --lib
 
 `cc`-style compiler drivers traditionally worked in two modes. They
 either compiled source files to object files or did that and linked
@@ -147,11 +147,23 @@ library but the overall structure is the same as for an executable.
 feature of having the compiler driver generate a static library to
 round out the various use cases.
 
-The `dcc`-specific `--exe`, `--dll` and `--lib` options are used to
-tell `dcc` what is being built and the name of the output file.
+The `dcc`-specific `--exe`, `--dll`, `--plugin` and `--lib` options
+are used to tell `dcc` what is being built and the name of the output
+file.
 
 The `--exe` option means "build an executable", `--dll` means "build a
-shared library" (sic) and `--lib` means "build a static library".
+dynamic, or shared, library", `--plugin` means build a shared library
+to be used as a plugin (see below) and `--lib` means "build a static
+library".
+
+#### Plugins vs DLLs
+
+Some platfoms, e.g. macOS, make a distiction between dynamic libraries
+and object files intended to be used as plugins, what macOS calls
+_bundles_.  To accomodate this `dcc` uses the idea of _plugin_ to
+refer to libraries meant to be loaded as plugins and _dll_ to mean
+dynamic libraries. On other platforms, Windows and ELF-based systems
+such as Linux and FreeBSD, plugins **are** DLLs.
 
 ### Language selection
 
@@ -235,12 +247,6 @@ the following files will be searched for in order,
 2. `$DCCDIR/LIBS.freebsd`
 3. `$DCCDIR/LIBS`
 
-On a 32-bit Windows the files are,
-
-1. `$DCCDIR/LIBS.windows_x86`
-2. `$DCCDIR/LIBS.windows`
-3. `$DCCDIR/LIBS`
-
 ### Libraries
 
 The `LIBS` options file is used to define the libraries and library
@@ -255,52 +261,55 @@ users to use UNIX linker-style naming for familarity. _libraries_ with
 names starting with `-L` are the names of of library directories.
 
 
-### Option File Inheritence
+### Option File Directives
 
-Options files may contain a special line `#inherits` to indicate they
-want to _inherit_ values set in by higher level, in the directory
-hierarchy sense, file. It is similar to a C `#include`.
+#### Inclusion
 
-An `#inherits` directive accepts no arguments and searches for a file
-with the same name as the file that includes the directive in a higher
-level directory.
+Options files may include other files using the `!include` directory
 
-#### Conditional option processing
+#### Inheritence
 
-Options files may include C pre-processor like conditionals to
-conditonal define compiler and linker options, and for "LIBS" files,
-libraries.
+The `!inherit` directive is similar to include but _inherits_
+options by automatically searching for a file with the same
+name as the one in which the directive occurs. The search for
+the file starts in the directory above that which contains
+the file.
 
-As with `#include` conditional directives mimic the C pre-processor's
-`#ifdef` and `#ifndef` and also allow for an `#else` clause (but there
-is no `#elif`).  Conditional sections are terminated with `#endif`.
+With no arguments `!inherit` directive for a file with the same name
+as the file that includes the directive in a higher level directory.
+
+With argument `!inherit` searches for a file with that name, or
+the platform-specific version of it.
+
+#### Conditionals
+
+Options files may include conditional directives to conditonally
+define compiler and linker options, and for "LIBS" files, libraries.
+
+As with `!include` conditional directives mimic the C pre-processor's
+`#ifdef` and `#ifndef` but use environment variables in the place of
+macros as with the C/C++ pre-processor.
 
 Conditionals **must** start in the first column.
 
-Unlike the C pre-processor dcc options files do not test for the
-definition of macros but instead use environment variables.
-
-Conditionals may be nested.
-
 #### Raisng Errors
 
-The `#error` directive allows options files to purposefully raise
-errors.  `#error` is useful with conditional sections to raise
-raise errors if environment variables are not defined as
-expected.
+The `!error` directive allows options files to purposefully raise
+errors.  `!error` is useful with conditional sections to raise
+raise errors if required environment variables are not defined.
 
-Any text following the `#error` directive is reported as the error to
+Any text following the `!error` directive is reported as the error to
 the user.
 
 #### Options file directives summary
 
-- `#include` _filename_
-- `#inherit`
-- `#ifdef` _envvar_
-- `#ifndef` _envvar_
-- `#else`
-- `#endif`
-- `#error` _[_ _text_ _]_
+- `!include` _filename_
+- `!inherit` [_filename_]
+- `!ifdef` _envvar_
+- `!ifndef` _envvar_
+- `!else`
+- `!endif`
+- `!error` _[_ _text_ _]_
 
 ## Implementation
 

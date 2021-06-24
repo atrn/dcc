@@ -53,6 +53,13 @@ func FindFileFromDirectory(filename, dir string) (string, os.FileInfo, bool, err
 	if DebugFind {
 		log.Printf("DEBUG FIND: FindFileFromDirectory %q %q", filename, dir)
 	}
+	if !filepath.IsAbs(dir) {
+		path, err := filepath.Abs(dir)
+		if err != nil {
+			return "", nil, false, err
+		}
+		dir = path
+	}
 	const root = string(filepath.Separator)
 	paths := []string{dir}
 	for dir != root {

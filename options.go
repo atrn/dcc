@@ -19,6 +19,16 @@ import (
 	"time"
 )
 
+const (
+	includeDirective = "!include"
+	inheritDirective = "!inherit"
+	ifdefDirective   = "!ifdef"
+	ifndefDirective  = "!ifndef"
+	elseDirective    = "!else"
+	endifDirective   = "!endif"
+	errorDirective   = "!error"
+)
+
 // Options represents a series of words and is used to represent
 // compiler and linker options. Options are intended to be read from a
 // file and act as a dependency to the build.
@@ -30,6 +40,14 @@ type Options struct {
 	Path     string      // associated file path
 	fileinfo os.FileInfo // actual options file info
 	mtime    time.Time   // options modtime, mutable
+}
+
+// NewOptions returns a new, empty, Options value
+//
+func NewOptions() *Options {
+	return &Options{
+		Values: make([]string, 0),
+	}
 }
 
 // FileInfo returns the receiver's os.FileInfo set when the
@@ -147,6 +165,10 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 		line := input.Text()
 		lineNumber++
 
+		if line == "" || line[0] == '#' {
+			continue
+		}
+
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
 			continue
@@ -169,18 +191,18 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			return nil
 		}
 
-		if fields[0] == "#error" {
+		if fields[0] == errorDirective {
 			if !conditional.IsSkippingLines() {
 				message := strings.Join(fields[1:], " ")
 				if message == "" {
-					message = "#error raised without message"
+					message = "error"
 				}
 				return false, reportErrorInFile(filename, lineNumber, message)
 			}
 			continue
 		}
 
-		if fields[0] == "#ifdef" {
+		if fields[0] == ifdefDirective {
 			if conditional.IsSkippingLines() {
 				conditional.PushState(conditional.CurrentState())
 			} else if err := evalCondition(false); err != nil {
@@ -190,7 +212,7 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			}
 		}
 
-		if fields[0] == "#ifndef" {
+		if fields[0] == ifndefDirective {
 			if conditional.IsSkippingLines() {
 				conditional.PushState(conditional.CurrentState())
 			} else if err := evalCondition(true); err != nil {
@@ -200,7 +222,7 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			}
 		}
 
-		if fields[0] == "#else" {
+		if fields[0] == elseDirective {
 			if !conditional.IsActive() {
 				return false, reportErrorInFile(filename, lineNumber, ErrNoCondition.Error())
 			}
@@ -208,7 +230,7 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			continue
 		}
 
-		if fields[0] == "#endif" {
+		if fields[0] == endifDirective {
 			if !conditional.IsActive() {
 				return false, reportErrorInFile(filename, lineNumber, ErrNoCondition.Error())
 			}
@@ -222,26 +244,21 @@ func (o *Options) ReadFromReader(r io.Reader, filename string, filter func(strin
 			continue
 		}
 
-		// #include <filename>
+		// !include <filename>
 		//
-		if fields[0] == "#include" {
+		if fields[0] == includeDirective {
 			if err := o.includeFile(filename, lineNumber, line, fields, filter); err != nil {
 				return false, err
 			}
 			continue
 		}
 
-		// #inherit
+		// !inherit [<filename>]
 		//
-		if fields[0] == "#inherit" {
+		if fields[0] == inheritDirective {
 			if err := o.inheritFile(filename, lineNumber, line, fields, filter); err != nil {
 				return false, err
 			}
-			continue
-		}
-
-		// Any other line that starts with a '#' is a comment.
-		if line[0] == '#' {
 			continue
 		}
 
@@ -284,7 +301,7 @@ func malformedLine(filename string, lineNumber int, what, line string) error {
 
 func (o *Options) includeFile(parentFilename string, lineNumber int, line string, fields []string, filter func(string) string) error {
 	if len(fields) != 2 {
-		return malformedLine(parentFilename, lineNumber, "#include", line)
+		return malformedLine(parentFilename, lineNumber, includeDirective, line)
 	}
 	Assert(fields[1] != "", "unexpected empty field returned from strings.Fields()")
 	filename := fields[1]
@@ -302,23 +319,26 @@ func (o *Options) includeFile(parentFilename string, lineNumber int, line string
 }
 
 func (o *Options) inheritFile(parentFilename string, lineNumber int, line string, fields []string, filter func(string) string) error {
-	if len(fields) != 1 {
-		return malformedLine(parentFilename, lineNumber, "#inherit", line)
+	if len(fields) > 2 {
+		return malformedLine(parentFilename, lineNumber, inheritDirective, line)
 	}
 	startingDir, inheritedFilename := ParentDir(parentFilename), Basename(parentFilename)
+	if len(fields) > 1 {
+		inheritedFilename = fields[1]
+	}
 	if Debug {
-		log.Printf("OPTIONS: %q #inherit (%q)", parentFilename, inheritedFilename)
+		log.Printf("OPTIONS: %q !inherit (%q)", parentFilename, inheritedFilename)
 	}
 	path, _, found, err := FindFileFromDirectory(inheritedFilename, startingDir)
 	if err != nil {
 		return err
 	}
 	if !found {
-		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("#inherited file %q not found", inheritedFilename))
+		return reportErrorInFile(parentFilename, lineNumber, fmt.Sprintf("inherited file %q not found", inheritedFilename))
 	}
 
 	if Debug {
-		log.Printf("DEBUG: %q #inheriting %q", parentFilename, path)
+		log.Printf("DEBUG: %q inheriting %q", parentFilename, path)
 	}
 
 	ok, err := o.ReadFromFile(path, filter)

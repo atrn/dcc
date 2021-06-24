@@ -23,26 +23,6 @@ do what we need. With `cl.exe` we have to _scrape_ the output produced
 by the `/showIncludes` option to obtain the names of dependent files.
 I haven't implemented that as yet.
 
-## Re-work Options Files
-
-The current implementation is a bit of a mess (hacked) and could do
-with a re-work.
-
-### Conditionsls
-
-It would be good to have some sort of conditional processing to better
-accomodate different types of builds.  The use of separate files using
-the Go-style platform specific names works reasonably well for the
-platform granularity but doesn't work well for things like debug
-vs. release or shared object vs static library.
-
-Adding some directives that allow options files to contain
-conditional sections would likely solve the issue.
-
-### Searches
-
-The search for options files needs to obey POLA.
-
 ## Linux-based OS Library Searching
 
 Linux distributions like to use all manner of directories

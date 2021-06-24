@@ -1,3 +1,11 @@
+// dcc - dependency-driven C/C++ compiler front end
+//
+// Copyright © A.Newman 2015.
+//
+// This source code is released under version 2 of the  GNU Public License.
+// See the file LICENSE for details.
+//
+
 package main
 
 import (
@@ -19,9 +27,9 @@ const (
 )
 
 var (
-	projectDccDir   = filepath.Join(testDataDir, DefaultDccDir)
-	projectRootDir  = filepath.Join(testDataDir, "root")
-	projectChildDir = filepath.Join(projectRootDir, "child")
+	testProjectDccDir   = filepath.Join(testDataDir, DefaultDccDir)
+	testProjectRootDir  = filepath.Join(testDataDir, "root")
+	testProjectChildDir = filepath.Join(testProjectRootDir, "child")
 )
 
 func makeTestDirs(t *testing.T) {
@@ -30,9 +38,9 @@ func makeTestDirs(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	mustMkdir(projectRootDir)
-	mustMkdir(projectChildDir)
-	mustMkdir(projectDccDir)
+	mustMkdir(testProjectRootDir)
+	mustMkdir(testProjectChildDir)
+	mustMkdir(testProjectDccDir)
 }
 
 func removeTestDirs(t *testing.T) {
@@ -41,10 +49,14 @@ func removeTestDirs(t *testing.T) {
 	}
 }
 
-func makeFile(t *testing.T, path string) {
-	if err := ioutil.WriteFile(path, []byte(path), 0666); err != nil {
+func makeFileWithContent(t *testing.T, path, content string) {
+	if err := ioutil.WriteFile(path, []byte(content), 0666); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func makeFile(t *testing.T, path string) {
+	makeFileWithContent(t, path, path)
 }
 
 func checkFile(t *testing.T, path, content string) {
@@ -82,11 +94,6 @@ func singleFileTestCase(t *testing.T, dirname, filename, cwd string) {
 		}
 	}(MustGetwd())
 
-	cwd, err = filepath.Abs(cwd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	if err = os.Chdir(cwd); err != nil {
 		t.Fatal(err)
 	} else if foundpath, found := FindFile(filename); !found {
@@ -101,14 +108,14 @@ func singleFileTestCase(t *testing.T, dirname, filename, cwd string) {
 func Test_FindFile_DirectorySearching(t *testing.T) {
 	setupTest(t)
 	defer removeTestDirs(t)
-	singleFileTestCase(t, projectChildDir, testFilename, projectChildDir)
-	singleFileTestCase(t, projectRootDir, testFilename, projectChildDir)
-	singleFileTestCase(t, projectDccDir, testFilename, projectChildDir)
+	singleFileTestCase(t, testProjectChildDir, testFilename, testProjectChildDir)
+	singleFileTestCase(t, testProjectRootDir, testFilename, testProjectChildDir)
+	singleFileTestCase(t, testProjectDccDir, testFilename, testProjectChildDir)
 }
 
 func Test_FindFile_PlatformSpecificSearches(t *testing.T) {
 	setupTest(t)
 	defer removeTestDirs(t)
-	singleFileTestCase(t, projectChildDir, OsSpecificFilename(testFilename), projectChildDir)
-	singleFileTestCase(t, projectDccDir, OsAndArchSpecificFilename(testFilename), projectChildDir)
+	singleFileTestCase(t, testProjectChildDir, OsSpecificFilename(testFilename), testProjectChildDir)
+	singleFileTestCase(t, testProjectDccDir, OsAndArchSpecificFilename(testFilename), testProjectChildDir)
 }
