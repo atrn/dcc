@@ -14,6 +14,17 @@ package main
 type StringSet map[string]struct{}
 
 /*
+ * Return a StringSet containing the given strings.
+ */
+func MakeStringSet(els ...string) StringSet {
+	set := make(StringSet)
+	for _, el := range els {
+		set[el] = struct{}{}
+	}
+	return set
+}
+
+/*
  * Insert an element into a StringSet
  */
 func (s *StringSet) Insert(el string) {

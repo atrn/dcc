@@ -12,34 +12,34 @@ import (
 	"path/filepath"
 )
 
-var cppSet = StringSet{
-	".cc":  {},
-	".cpp": {},
-	".cxx": {},
-	".c++": {},
-	".hh":  {},
-	".hpp": {},
-	".hxx": {},
-	".h++": {},
-}
+var cppSet = MakeStringSet(
+	".c++",
+	".cc",
+	".cpp",
+	".cxx",
+	".h++",
+	".hh",
+	".hpp",
+	".hxx",
+)
 
-var sourceFileSet = StringSet{
-	".c":   {},
-	".cc":  {},
-	".cpp": {},
-	".cxx": {},
-	".c++": {},
-	".m":   {},
-	".mm":  {},
-}
+var sourceFileSet = MakeStringSet(
+	".c",
+	".c++",
+	".cc",
+	".cpp",
+	".cxx",
+	".m",
+	".mm",
+)
 
-var headerFileSet = StringSet{
-	".h":   {},
-	".hh":  {},
-	".hpp": {},
-	".hxx": {},
-	".h++": {},
-}
+var headerFileSet = MakeStringSet(
+	".h",
+	".h++",
+	".hh",
+	".hpp",
+	".hxx",
+)
 
 // IsCPlusPlusFile returns true if the supplied pathname is that
 // of a C++ source file.
