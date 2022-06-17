@@ -697,7 +697,7 @@ func main() {
 }
 
 // Helper function to create an Options (see options.go) that
-// defines the underling compiler, either CC and CXX depending
+// defines the underlying compiler, either CC and CXX depending
 // upon mode.
 //
 // This function is given the name of the file and the default
