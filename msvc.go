@@ -10,16 +10,15 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
-
-var errNotImplemented = errors.New("MSVC support not yet implemented")
 
 type msvcCompiler struct {
 }
@@ -55,10 +54,12 @@ func (cl *msvcCompiler) Compile(source, object, deps string, options []string, s
 		return err
 	}
 
+	fmt.Fprintln(depsFile, object)
+
 	go msvcScrapeShowIncludes(r, depsFile, os.Stdout, filepath.Base(source))
 
 	args := append([]string{}, options...)
-	args = append(args, "/showIncludes", "/c", source, "/Fo"+object)
+	args = append(args, "/nologo", "/showIncludes", "/c", source, "/Fo"+object)
 	cmd := exec.Command(cl.Name(), args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, stderr
 	err = cmd.Run()
@@ -75,11 +76,35 @@ func (cl *msvcCompiler) Compile(source, object, deps string, options []string, s
 }
 
 func (cl *msvcCompiler) ReadDependencies(path string) (string, []string, error) {
-	return "", nil, errNotImplemented
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", nil, err
+	}
+
+	input := bufio.NewScanner(bytes.NewReader(data))
+	if !input.Scan() {
+		return "", nil, ErrUnexpectedEOF
+	}
+
+	target := input.Text()
+
+	var filenames = make([]string, 0, 1000)
+	for input.Scan() {
+		filename := input.Text()
+		filenames = append(filenames, filename)
+	}
+
+	return target, filenames, nil
 }
 
 // NewMsvcCompiler returns a CompilerDriver using Microsoft's
 // cl.exe C/C++ compiler.
 func NewMsvcCompiler() Compiler {
 	return &msvcCompiler{}
+}
+
+func (cl *msvcCompiler) DefineExecutableArgs(exeName string) []string {
+	args := make([]string, 1)
+	args[0] = fmt.Sprintf("/Fe%s", exeName)
+	return args
 }

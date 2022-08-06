@@ -19,7 +19,6 @@ import (
 // target using the supplied options. Return a corresponding error
 // value. If the target exists and is newer than any of the inputs no
 // linking occurs.
-//
 func Link(target string, inputs []string, libs *Options, options *Options, otherFiles *Options, frameworks []string) error {
 	if target == "" {
 		target = platform.DefaultExecutable
@@ -30,7 +29,7 @@ func Link(target string, inputs []string, libs *Options, options *Options, other
 		args = append(args, inputs...)
 		args = append(args, endash(libs.Values)...)
 		args = append(args, frameworks...)
-		args = append(args, "-o", target)
+		args = append(args, ActualCompiler.DefineExecutableArgs(target)...)
 		if !Quiet {
 			if Verbose {
 				fmt.Fprintln(os.Stdout, ActualCompiler.Name(), strings.Join(args, " "))
