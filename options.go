@@ -76,6 +76,12 @@ func (o *Options) String() string {
 	return strings.Join(o.Values, " ")
 }
 
+// Changed updates the "modtime" of the receiver, to "now".
+//
+func (o *Options) Changed() {
+	o.mtime = time.Now()
+}
+
 // Append appends an option to the set of options.  Note, Append does
 // NOT modify the mtime of the receiver.
 //
@@ -148,7 +154,7 @@ func (o *Options) ReadFromFile(filename string, filter func(string) string) (boo
 		return true, err
 	}
 	o.fileinfo = info
-	o.mtime = info.ModTime() // TODO eliminate mtime, use info
+	o.SetModTime(info.ModTime())
 	return o.ReadFromReader(file, filename, filter)
 }
 

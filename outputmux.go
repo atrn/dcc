@@ -17,7 +17,7 @@ import (
 )
 
 // OutputMux is an io.Writer multiplexor that is used to ensure output
-// writtento multiple Writers is NOT interleaved when written to the
+// written to multiple Writers is NOT interleaved when written to the
 // final output writer.
 //
 // The OutputMux NewWriter method returns an io.WriteCloser that lets
