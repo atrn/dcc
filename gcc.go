@@ -18,7 +18,6 @@ import (
 
 // GccStyleCompiler is-a CompilerDriver that uses gcc-style options to
 // generate make-format dependencies.
-//
 type GccStyleCompiler struct {
 	command string
 }
@@ -28,7 +27,6 @@ type GccStyleCompiler struct {
 // name. This is used to run gcc, clang and icc and any
 // compiler with "gcc"" in its command name (e.g. typically
 // named cross compilers).
-//
 func NewGccStyleCompiler(name string) Compiler {
 	return &GccStyleCompiler{
 		command: name,
@@ -36,13 +34,11 @@ func NewGccStyleCompiler(name string) Compiler {
 }
 
 // Name returns the Compiler's name.
-//
 func (gcc *GccStyleCompiler) Name() string {
 	return gcc.command
 }
 
 // Compile runs the compiler to compile a source code to object code.
-//
 func (gcc *GccStyleCompiler) Compile(source, object, deps string, options []string, w io.Writer) error {
 	args := append([]string{}, options...)
 	args = append(args, "-MD", "-MF", deps, "-c", source, "-o", object)
@@ -52,7 +48,6 @@ func (gcc *GccStyleCompiler) Compile(source, object, deps string, options []stri
 // ReadDependencies reads make-style dependency specification from the named file
 // and returns the names of the target, the dependent files and an error value,
 // non-nil if the file failed to be parsed or opened.
-//
 func (gcc *GccStyleCompiler) ReadDependencies(path string) (string, []string, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -86,4 +81,11 @@ func (gcc *GccStyleCompiler) ReadDependencies(path string) (string, []string, er
 	}
 
 	return target, filenames, nil
+}
+
+func (gcc *GccStyleCompiler) DefineExecutableArgs(exeName string) []string {
+	args := make([]string, 2)
+	args[0] = "-o"
+	args[1] = exeName
+	return args
 }

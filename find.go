@@ -60,9 +60,8 @@ func FindFileFromDirectory(filename, dir string) (string, os.FileInfo, bool, err
 		}
 		dir = path
 	}
-	const root = string(filepath.Separator)
 	paths := []string{dir}
-	for dir != root {
+	for !platform.IsRoot(dir) {
 		dir = filepath.Dir(dir)
 		paths = append(paths, dir)
 	}

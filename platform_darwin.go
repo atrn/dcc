@@ -29,6 +29,7 @@ var platform = Platform{
 	CreateLibrary:     MacosCreateLibrary,
 	CreateDLL:         MacosCreateDLL,
 	CreatePlugin:      MacosCreatePlugin,
+	IsRoot:		   UnixIsRoot,
 }
 
 func logCommand(cmd string, args []string) {

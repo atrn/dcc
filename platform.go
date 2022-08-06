@@ -8,6 +8,10 @@
 
 package main
 
+import (
+	"path/filepath"
+)
+
 // The Platform type defines a number of platform-specific values and
 // functions. Code defines a single global value, platform, of type
 // Platform which is defined in the platform_xxx.go file used for the
@@ -29,6 +33,7 @@ type Platform struct {
 	CreateDLL         func(string, []string, []string, []string, []string) error
 	CreatePlugin      func(string, []string, []string, []string, []string) error
 	SelectTarget      func(*Platform, string) error
+	IsRoot		  func(string) bool
 }
 
 // StaticLibrary transforms a filename "stem" to the name of a
@@ -50,4 +55,11 @@ func (p *Platform) DynamicLibrary(name string) string {
 //
 func (p *Platform) PluginFile(name string) string {
 	return p.PluginPrefix + name + p.PluginSuffix
+}
+
+// UnixIsRoot determines if a pathname represents the top-level,
+// or "root", of the file system hierarchy.
+//
+func UnixIsRoot(path string) bool {
+	return filepath.Clean(path) == "/"
 }

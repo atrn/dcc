@@ -11,6 +11,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var platform = Platform{
@@ -24,22 +25,30 @@ var platform = Platform{
 	CreateLibrary:     WindowsCreateLibrary,
 	CreateDLL:         WindowsCreateDLL,
 	CreatePlugin:      WindowsCreateDLL,
+	IsRoot:            WindowsIsRoot,
 }
 
 // WindowsCreateLibrary creates a static library from the supplied object files
 // using Microsoft's LIB.EXE
-//
 func WindowsCreateLibrary(filename string, objectFiles []string) error {
-	args := append([]string{"/out:" + filename}, objectFiles...)
+	args := append([]string{"/nologo", "/out:" + filename}, objectFiles...)
 	return Exec("lib", args, os.Stderr)
 }
 
 // WindowsCreateDLL creates a dynamic library from the supplied object files
 // and library files using Microsoft's LINK.EXE.
-//
 func WindowsCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
-	args := append([]string{"/DLL", "/OUT:" + filename}, objectFiles...)
+	args := append([]string{"/nologo", "/DLL", "/OUT:" + filename}, objectFiles...)
 	args = append(args, linkerOptions...)
 	args = append(args, libraryFiles...)
 	return Exec("link", args, os.Stderr)
+}
+
+// WindowsIsRoot determines if a pathname represents a "root"
+// directory.  A "root" is defined to be the top-level directory of a
+// volume (aka drive).
+func WindowsIsRoot(path string) bool {
+	path = filepath.Clean(path)
+	path = strings.TrimPrefix(path, filepath.VolumeName(path))
+	return path == "\\"
 }

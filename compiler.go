@@ -21,7 +21,6 @@ import (
 // gcc-style dependency generation (as done by gcc, clang and icc)
 // and the approach taken with Microsoft C++ (parsing the output
 // of its /showIncludes switch).
-//
 type Compiler interface {
 	// Return a name for the compiler.
 	//
@@ -36,11 +35,14 @@ type Compiler interface {
 	// Read a compiler-generated depdencies file and return the dependent filenames.
 	//
 	ReadDependencies(path string) (string, []string, error)
+
+	// Return the command line options used to name the ouput executable
+	// file when the compiler (driver) is used to link a program
+	DefineExecutableArgs(exeName string) []string
 }
 
 // GetCompiler is a factory function to return a value that implements
 // the Compiler interface.
-//
 func GetCompiler(name string) Compiler {
 	switch name {
 	case "cl", "cl.exe":
