@@ -1,29 +1,42 @@
 # dcc - a dependency-driven C/C++ compiler driver
 
-`dcc` is a C/C++ compiler driver (_wrapper_) that that adds, parallel,
-_dependency-based_ building to an underlying C or C++ compiler (`gcc`,
-`clang`, and `icc` have been used sucessfully).
+`dcc` is a C/C++ compiler driver that that adds, parallel,
+_dependency-based_ building to an underlying C or C++ compiler.  `dcc`
+adds many of the build-related functions of build tools such as `make`
+to the compiler itself and allows build systems to _not_ perform that
+work.
 
 `dcc` uses compiler generated dependency information, along with
 hard-coded `make`-like rules, to determine if compilation or linking
-is actually required. This allows dcc to avoid running commands if
-they are not required. As with a typical make-based builds `dcc` only
-re-compiles, or re-links, when an output file is out-of-date with
-respect to its inputs, or dependencies. However, unlike make-based
-builds the user doesn't have to do anything to get this behaviour.
-They can use dcc as if it were cc and obtain automatic, parallel,
-dependency-based builds.
+is actually required. This allows `dcc` to avoid running commands if
+they are not required - `dcc` only re-compiles, or re-links, when an
+output file is out-of-date with respect to its inputs. Inputs include
+not only the files used in the compilation, both sources and dependent
+header files, but also the compilation options.
 
-The aim of moving the dependency checking into the compiler driver is
-to simplify build systems. Instead of using a build tool to do the
-work of correctly, and efficiently, building the program or library
-using knowledge of the language dependency model, we have the
-language's compiler take care of that doing that.
+Unlike building with tools such as make users don't have to do
+anything to get this behaviour.  They can use `dcc` as if it were `cc`
+and obtain automatic, parallel, dependency-based builds for _free_.
+
+Moving dependency checking into the compiler driver simplifies
+build systems. Instead of using a build tool to do the work of
+correctly, and efficiently, building the program or library using
+knowledge of the language dependency model, we have the language's
+compiler take care of that doing that.
 
 `dcc` adds a number of features to the compiler-driver model to
 simplify the development process.  For instance, `dcc` can uses files
 to store compiler options which are used as dependencies in builds
 allowing automatic re-compilation when build options change.
+
+## Supported Compilers and Platforms
+
+`dcc` has been used with a number of compilers and target OSes.  `dcc`
+can be used on UNIX-like OSes, e.g. macOS, FreeBSD, common Linux-based
+OS distributions, and on Microsoft Windows.
+
+`dcc` supports what it calls _gcc style compilers_, `gcc`, `clang` and
+Intel's `icc`, and on Windows Microsoft's `cl.exe` can be used.
 
 ## Building and Installation
 
@@ -185,7 +198,10 @@ and information inferred from the filenames and system environment.
 
 With gcc-style compilers `dcc` uses the `-MF` and `-MD` options to
 have the compiler output make-format dependencies to a file which
-`dcc` reads on the next run.
+`dcc` reads on the next run. With Microsoft's `cl.exe` the compiler's
+`/showIncludes` flag is used to output the names of included files
+which are then _scraped_ and used to create `.d` files used by
+the next compilation.
 
 Dependency files are stored in a `.dcc.d` directory that resides in
 the same directory as the object file being created. The `DCCDEPS`
@@ -397,6 +413,20 @@ Number of compilations to run in parallel.
 
 
 ## Changelog
+
+### version 0.0.5
+
+Initial support for Microsoft compiler on Windows.
+
+### version 0.0.4
+
+Use '!' as the options file directive prefix in place of '#'
+
+Allow `!inherit` directives to define the, base, filename of
+the file to be inherited
+
+Allow environment variables to be used in conditionals in
+options files.
 
 ### version 0.0.3
 
