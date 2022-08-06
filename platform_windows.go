@@ -31,14 +31,14 @@ var platform = Platform{
 // WindowsCreateLibrary creates a static library from the supplied object files
 // using Microsoft's LIB.EXE
 func WindowsCreateLibrary(filename string, objectFiles []string) error {
-	args := append([]string{"/out:" + filename}, objectFiles...)
+	args := append([]string{"/nologo", "/out:" + filename}, objectFiles...)
 	return Exec("lib", args, os.Stderr)
 }
 
 // WindowsCreateDLL creates a dynamic library from the supplied object files
 // and library files using Microsoft's LINK.EXE.
 func WindowsCreateDLL(filename string, objectFiles []string, libraryFiles []string, linkerOptions []string, frameworks []string) error {
-	args := append([]string{"/DLL", "/OUT:" + filename}, objectFiles...)
+	args := append([]string{"/nologo", "/DLL", "/OUT:" + filename}, objectFiles...)
 	args = append(args, linkerOptions...)
 	args = append(args, libraryFiles...)
 	return Exec("link", args, os.Stderr)
