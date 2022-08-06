@@ -11,6 +11,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var platform = Platform{
@@ -24,6 +25,7 @@ var platform = Platform{
 	CreateLibrary:     WindowsCreateLibrary,
 	CreateDLL:         WindowsCreateDLL,
 	CreatePlugin:      WindowsCreateDLL,
+	IsRoot: 	   WindowsIsRoot,
 }
 
 // WindowsCreateLibrary creates a static library from the supplied object files
@@ -42,4 +44,10 @@ func WindowsCreateDLL(filename string, objectFiles []string, libraryFiles []stri
 	args = append(args, linkerOptions...)
 	args = append(args, libraryFiles...)
 	return Exec("link", args, os.Stderr)
+}
+
+func WindowsIsRoot(path string) bool {
+	path = filepath.Clean(path)
+	path = strings.TrimPrefix(path, filepath.VolumeName(path))
+	return path == "\\"
 }

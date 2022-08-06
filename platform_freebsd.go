@@ -23,4 +23,5 @@ var platform = Platform{
 	CreateLibrary:     ElfCreateLibrary,
 	CreateDLL:         ElfCreateDLL,
 	CreatePlugin:      ElfCreateDLL,
+	IsRoot:		   UnixIsRoot,
 }

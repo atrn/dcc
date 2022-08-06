@@ -68,4 +68,5 @@ var platform = Platform{
 	CreateDLL:         ElfCreateDLL,
 	CreatePlugin:      ElfCreateDLL,
 	SelectTarget:      linuxSelectTarget,
+	IsRoot:		   UnixIsRoot,
 }

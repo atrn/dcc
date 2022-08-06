@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -191,11 +192,16 @@ func TestError(t *testing.T) {
 		t.Fatalf("!error within false condition triggered with message %q", err.Error())
 	}
 
+        knownEnvVar := "HOME"
+        if runtime.GOOS == "windows" {
+                knownEnvVar = "USERPROFILE"
+	}
 	data = fmt.Sprintf(`
-!ifdef HOME
+!ifdef %s
   !error %s
 !endif
 `,
+		knownEnvVar,
 		errorMessage,
 	)
 	_, err = readOptionsFromString(data)
