@@ -370,6 +370,7 @@ func main() {
 			default:
 				if _, err := Stat(arg); err != nil {
 					compilerOptions.Append(arg)
+					compilerOptions.Changed()
 				} else {
 					collectInputFile(arg)
 				}
@@ -461,18 +462,21 @@ func main() {
 			if i++; i < len(os.Args) {
 				libraryFiles.Append(os.Args[i])
 			}
+			libraryFiles.Changed()
 
 		case macos && (arg == "-macosx_version_min" || arg == "-macosx_version_max"):
 			linkerOptions.Append(arg)
 			if i++; i < len(os.Args) {
 				linkerOptions.Append(os.Args[i])
 			}
+			linkerOptions.Changed()
 
 		case macos && arg == "-bundle_loader":
 			linkerOptions.Append(arg)
 			if i++; i < len(os.Args) {
 				linkerOptions.Append(os.Args[i])
 			}
+			linkerOptions.Changed()
 
 		case arg == "-o":
 			if i++; i < len(os.Args) {
@@ -494,6 +498,7 @@ func main() {
 
 		case strings.HasPrefix(arg, "-L"):
 			linkerOptions.Append(arg)
+			linkerOptions.Changed()
 			libraryDirs = append(libraryDirs, arg[2:])
 
 		case strings.HasPrefix(arg, "-l"):
@@ -516,6 +521,7 @@ func main() {
 
 		default:
 			compilerOptions.Append(arg)
+			compilerOptions.Changed()
 		}
 	}
 
