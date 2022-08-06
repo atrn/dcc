@@ -7,11 +7,19 @@
             "label": "build",
             "type": "shell",
             "command": "go build",
-            "problemMatcher": ["$go"],
+            "problemMatcher": [
+                "$go"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "tests",
+            "type": "shell",
+            "command": "go test",
+            "problemMatcher": []
         }
     ]
 }
